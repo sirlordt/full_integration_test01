@@ -1,0 +1,38 @@
+{
+  "end_points": "/api/v1/",
+  "databases": [
+    {
+      "name": "sql_01",
+      "driver": "sql/mysql",
+      "host": "127.0.0.1",
+      "port": 3306,
+      "database": "TestDB",
+      "user": "root",
+      "password": "dsistemas",
+      "connections": 10,
+      "comment": "any comment here"
+    },
+    {
+      "name": "no_sql_01",
+      "driver": "no_sql/mongo_db",
+      "host": "127.0.0.1",
+      "port": 27017,
+      "database": "TestDB",
+      "user": "",
+      "password": "",
+      "connections": 10,
+      "comment": "any comment here"
+    },
+    {
+      "name": "no_sql_02",
+      "driver": "no_sql/redis",
+      "host": "127.0.0.1",
+      "port": 6379,
+      "database": "",
+      "user": "",
+      "password": "12345678",
+      "connections": 10,
+      "comment": "any comment here"
+    }
+  ]
+}

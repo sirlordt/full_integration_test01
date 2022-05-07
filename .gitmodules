@@ -1,0 +1,11 @@
+[submodule "external/libraries/hv/git_repo"]
+	path = external/libraries/hv/git_repo
+	url = https://github.com/sirlordt/libhv.git
+	branch = main_ctx_finish
+[submodule "external/libraries/bcrypt/git_repo"]
+	path = external/libraries/bcrypt/git_repo
+	url = https://github.com/hilch/Bcrypt.cpp
+[submodule "external/libraries/soci/git_repo"]
+	path = external/libraries/soci/git_repo
+	url = https://github.com/sirlordt/soci.git
+	branch = soci_my_merged_features
