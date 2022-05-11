@@ -79,6 +79,7 @@
         "shared_mutex": "cpp",
         "coroutine": "cpp",
         "source_location": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "syncstream": "cpp"
     },
 }

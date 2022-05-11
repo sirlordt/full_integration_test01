@@ -48,4 +48,7 @@ set_target_properties( HV PROPERTIES IMPORTED_LOCATION
 target_include_directories( HV INTERFACE
                             ${CMAKE_CURRENT_BINARY_DIR}/install/include )
 
-target_link_libraries( HV INTERFACE pthread )
+# With full -static link the pthread cause segmentation fault
+# https://stackoverflow.com/questions/9002264/starting-a-stdthread-with-static-linking-causes-segmentation-fault
+# https://github.com/sewenew/redis-plus-plus/issues/356
+target_link_libraries( HV INTERFACE -Wl,--whole-archive pthread -Wl,--no-whole-archive )

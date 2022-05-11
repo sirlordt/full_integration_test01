@@ -35,11 +35,17 @@
 
 #include "xxhash.h"
 
-#include "modules/common/common.hpp"
+#include "uuid_v4/uuid_v4.h"
+
+#include "modules/common/Common.hpp"
 
 #include "modules/handler/handler.hpp"
 
-nanojson::element config_json;
+#include "modules/handler/Handlers.hpp"
+
+#include "modules/common/StoreConnectionManager.hpp"
+
+Common::JSONElement config_json;
 
 /*
  * #define TEST_HTTPS 1
@@ -75,52 +81,95 @@ nanojson::element config_json;
 
 // }
 
+bool init_stores() {
 
+  int result { 0 };
 
-int main(int argc, char** argv) {
+  if ( config_json[ "stores_connections" ].is_defined() &&
+       config_json[ "stores_connections" ].is_array() ) {
+
+    auto stores_connections_config_list = config_json[ "stores_connections" ].as_array_ref();
+
+    Store::StoreConnectionManager::init_stores_connections( stores_connections_config_list );
+
+    result = 1;
+
+  }
+  else {
+
+    hlogw( "No stores_connections section found or is not array of valid objects. Please check your config file." );
+
+  }
+
+  if ( config_json[ "stores_connections_alias" ].is_defined() &&
+       config_json[ "stores_connections_alias" ].is_object() ) {
+
+    auto stores_connections_alias_config_object = config_json[ "stores_connections_alias" ].as_object_ref();
+
+    Store::StoreConnectionManager::init_stores_connections_alias( stores_connections_alias_config_object );
+
+    // for ( auto it = stores_connections_alias.begin(); it != stores_connections_alias.end(); it++) {
+
+    //   std::cout << "key: " << it->first << std::endl;
+    //   std::cout << "value: " << it->second << std::endl;
+
+    // }
+
+    result += 1;
+
+  }
+  else {
+
+    hlogw( "No stores_connections_alias section found or is not valid object. Please check your config file." );
+
+  }
+
+  return result >= 2;
+
+}
+
+int main( int argc, char** argv ) {
 
   HV_MEMCHECK;
 
-  struct timeval tv;
-  struct tm* tm = NULL;
-  gettimeofday(&tv, NULL);
-  time_t tt = tv.tv_sec;
-  tm = localtime(&tt);
-  int year,month,day,hour,min,sec,us;
+  // struct timeval tv;
+  // struct tm* tm = NULL;
+  // gettimeofday( &tv, NULL );
+  // time_t tt = tv.tv_sec;
+  // tm = localtime( &tt );
+  // int year,month,day,hour,min,sec,us;
 
-  year     = tm->tm_year + 1900;
-  month    = tm->tm_mon  + 1;
-  day      = tm->tm_mday;
-  hour     = tm->tm_hour;
-  min      = tm->tm_min;
-  sec      = tm->tm_sec;
-  us       = tv.tv_usec / 1000;
+  // year     = tm->tm_year + 1900;
+  // month    = tm->tm_mon  + 1;
+  // day      = tm->tm_mday;
+  // hour     = tm->tm_hour;
+  // min      = tm->tm_min;
+  // sec      = tm->tm_sec;
+  // us       = tv.tv_usec / 1000;
 
-  main_ctx_init(argc, argv);
+  main_ctx_init( argc, argv );
 
   const char *path = argv[ 0 ];
 
   std::cout << "Current path: " << path << std::endl;
 
-  //split_filename( path );
-
-  const std::string config_file_path = common::get_file_path( path ) + "config/main.json";
+  const std::string config_file_path = Common::get_file_path( path ) + "config/main.json";
 
   std::cout << "Config File: " << config_file_path << std::endl;
 
-  config_json = common::get_config( config_file_path );
+  config_json = Common::get_config( config_file_path );
 
-  // if ( config_json[ "end_points" ].is_defined() ) {
+  init_stores();
 
-  //   std::cout << "config_json[ \"end_points\" ] = " << config_json[ "end_points" ].to_string() << std::endl;
+  int port = config_json[ "port" ].is_number() ? config_json[ "port" ].to_integer(): 8080;
+
+  // if ( argc > 1 ) {
+
+  //   port = atoi( argv[ 1 ] );
 
   // }
 
-  int port = 0;
-  if (argc > 1) {
-      port = atoi(argv[1]);
-  }
-  if (port == 0) port = 8080;
+  if ( port <= 0 ) port = 8080;
 
   HttpService router;
 
@@ -128,6 +177,93 @@ int main(int argc, char** argv) {
   router.postprocessor = Handler::postprocessor;
   //router.largeFileHandler = Handler::largeFileHandler;
   router.errorHandler = Handler::errorHandler;
+
+  std::string base_path = config_json[ "base_path" ].is_string() ? config_json[ "base_path" ].to_string(): "";
+
+  std::stringstream end_point;
+
+  end_point << base_path;
+
+  const bool add_separator = base_path[ base_path.size() - 1 ] != '/';
+
+  if ( add_separator ) {
+
+    end_point << "/";
+
+  }
+
+  end_point << "system/database/transaction/begin";
+
+  router.POST( end_point.str().c_str(), Handlers::handler_database_transaction_begin );
+
+  // end_point.seekp( 0 );
+  // end_point.seekg( 0 );
+  // end_point.str( "" );
+  // end_point.clear();
+
+  {
+
+    auto temp = std::stringstream();
+    end_point.swap( temp ); //Clear the buffer
+
+  }
+
+  end_point << base_path;
+
+  if ( add_separator ) {
+
+    end_point << "/";
+
+  }
+
+  end_point << "system/database/transaction/commit";
+
+  //std::cout << end_point.str() << std::endl;
+
+  router.POST( end_point.str().c_str(), Handlers::handler_database_transaction_commit );
+
+  //end_point.clear();
+
+  {
+
+    auto temp = std::stringstream();
+    end_point.swap( temp ); //Clear the buffer
+
+  }
+
+  end_point << base_path;
+
+  if ( add_separator ) {
+
+    end_point << "/";
+
+  }
+
+  end_point << "system/database/transaction/rollback";
+
+  router.POST( end_point.str().c_str(), Handlers::handler_database_transaction_rollback );
+
+  //end_point.clear();
+
+  {
+
+    auto temp = std::stringstream();
+    end_point.swap( temp ); //Clear the buffer
+
+  }
+
+  end_point << base_path;
+
+  if ( add_separator ) {
+
+    end_point << "/";
+
+  }
+
+  end_point << "system/database/query";
+
+  router.POST( end_point.str().c_str(), Handlers::handler_database_query );
+
 
   router.GET( "/ping", []( HttpRequest* req, HttpResponse* resp ) {
 
@@ -222,7 +358,12 @@ int main(int argc, char** argv) {
   // uncomment to test multi-processes
   // server.worker_processes = 4;
   // uncomment to test multi-threads
-  server.worker_threads = 4;
+
+  hlogi("(Before) Log file is: %s", g_main_ctx.logfile);
+
+  int threads = std::stoi( config_json[ "threads" ] );
+
+  server.worker_threads = threads > 0 ? threads: 4;
 
   http_server_run( &server, 0 );
 
@@ -257,27 +398,35 @@ int main(int argc, char** argv) {
   // std::cout << decimal_value ;
   // ***** XXHASH *****
 
-  if ( config_json[ "end_points" ].is_defined() ) {
+  if ( config_json[ "base_path" ].is_defined() ) {
 
-    std::cout << "config_json[ \"end_points\" ] = " << config_json[ "end_points" ].to_string() << std::endl;
+    std::cout << "config_json[ \"base_path\" ] = " << config_json[ "base_path" ].to_string() << std::endl;
 
   }
 
-  if ( config_json[ "databases" ].is_defined() ) {
+  // if ( config_json[ "databases" ].is_defined() ) {
 
-    auto databases_connection_config = config_json[ "databases" ].as_array();
+  //   auto databases_connection_config = config_json[ "databases" ].as_array();
 
+  //   Store::StoreConnectionManager::init_connection_manager( databases_connection_config );
+
+    auto store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( "sql_01" );
+
+    /*
     for ( auto & database_connection_config: databases_connection_config  ) {
 
-      auto store_connection = common::make_store_connection( database_connection_config );
+      auto store_connection = Common::make_store_connection( database_connection_config );
+      */
 
       if ( store_connection ) {
+
+        std::cout << "Connection index: " << store_connection->index() << std::endl;
 
         if ( store_connection->sql_connection() ) {
 
           std::cout << "*** SQL = " << store_connection->sql_connection()->get_backend_name() << " ***" << std::endl;
 
-          soci::transaction *transaction = nullptr;
+          soci::transaction *transaction { nullptr };
 
           try {
 
@@ -291,10 +440,12 @@ int main(int argc, char** argv) {
 
               soci::row const& row = *it;
 
+              std::string const& extra_data = row.get_indicator( "ExtraData" ) == soci::i_null ? "NULL": row.get<std::string>( "ExtraData" );
+
               // dynamic data extraction from each row:
               std::cout << "Id: " << row.get<std::string>( "Id" ) << std::endl
                         << "Name: " << row.get<std::string>( "FirstName" ) << " " << row.get<std::string>( "LastName" ) << std::endl
-                        << "ExtraData: " << row.get<std::string>( "ExtraData" ) << std::endl;
+                        << "ExtraData: " << extra_data << std::endl;
 
             }
 
@@ -375,7 +526,19 @@ int main(int argc, char** argv) {
 
       }
 
+    //}
+
+    Store::StoreConnectionManager::return_leased_store_connection( store_connection );
+
+    store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( "sql_01" );
+
+    if ( store_connection ) {
+
+      std::cout << "Connection index: " << store_connection->index() << std::endl;
+
     }
+
+    Store::StoreConnectionManager::return_leased_store_connection( store_connection );
 
     /*
     // ***** SOCI *****
@@ -557,7 +720,7 @@ int main(int argc, char** argv) {
     // ***** MONGODB *****
     */
 
-  }
+  //}
   // std::any any_value = 10;
 
   // int x = convert_from_any( any_value );
@@ -572,7 +735,7 @@ int main(int argc, char** argv) {
 
   std::cout << "Running server at 0.0.0.0:8080" << std::endl;
   std::cout << "Press enter to exit" << std::endl;
-  // hlogi("Log file is: %s", g_main_ctx.logfile);
+  hlogi("Log file is: %s", g_main_ctx.logfile);
 
   // SAFE_FREE( g_main_ctx.save_argv[ 0 ] );
   // SAFE_FREE( g_main_ctx.save_argv );

@@ -6,7 +6,7 @@ project( main )
 
 set( CMAKE_FIND_LIBRARY_SUFFIXES ".a" ) # <--- Change the preference to .a and not .so/.dll
 #set( BUILD_SHARED_LIBS OFF )
-#set( CMAKE_EXE_LINKER_FLAGS "-static" ) # <-- full static executable
+#set( CMAKE_EXE_LINKER_FLAGS "-static -Wl,--start-group" ) # <-- full static executable
 set( CMAKE_EXE_LINKER_FLAGS "-Wl,--start-group" ) # <-- full static executable
 #set( CMAKE_EXE_LINKER_FLAGS "-fsanitize=address" ) # <-- active the address sanitizer in development
 #set( CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++" ) # valgrind detect a memoty leak of 72 kb. Is ok is gnu standar library c++ memory leak

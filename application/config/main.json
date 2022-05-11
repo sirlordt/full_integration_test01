@@ -1,15 +1,17 @@
 {
-  "end_points": "/api/v1/",
-  "databases": [
+  "base_path": "/api/v1",
+  "port": 8080,
+  "threads": 4,
+  "stores_connections": [
     {
       "name": "sql_01",
       "driver": "sql/mysql",
       "host": "127.0.0.1",
-      "port": 3306,
+      "port": 3307,
       "database": "TestDB",
       "user": "root",
       "password": "dsistemas",
-      "connections": 10,
+      "pool": 3,
       "comment": "any comment here"
     },
     {
@@ -20,7 +22,7 @@
       "database": "TestDB",
       "user": "",
       "password": "",
-      "connections": 10,
+      "pool": 3,
       "comment": "any comment here"
     },
     {
@@ -31,8 +33,19 @@
       "database": "",
       "user": "",
       "password": "12345678",
-      "connections": 10,
+      "pool": 3,
       "comment": "any comment here"
     }
-  ]
+  ],
+  "stores_connections_alias": {
+    "main": "sql_01",
+    "support": "no_sql_01",
+    "cache": "no_sql_02"
+  },
+  "tokens": {
+    "534b1c6b-f759-4195-872b-aa5d8c9871f7": {
+      "deny": [ "" ],
+      "allow": [ "*" ]
+    }
+  }
 }

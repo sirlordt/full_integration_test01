@@ -1,7 +1,19 @@
+#include <string>
+#include <thread>
+// #include <iostream>
+// #include <sstream>
+// #include <syncstream>
+// #include <cstring>
+// #include <atomic>
+// #include <sys/time.h>
 
-#include "common.hpp"
+#include "Common.hpp"
 
-namespace common {
+#include "hv/hlog.h"
+
+#include "xxhash.h"
+
+namespace Common {
 
 const std::string get_file_path( const std::string& file )
 {
@@ -51,7 +63,9 @@ std::stringstream read_text_file_content( const std::string& path_file_to_read )
   catch ( const std::exception& ex )
   {
 
-    std::cout << "Exception: " << ex.what() << std::endl;
+    hlogi( "Exception: %s", ex.what() );
+
+    //std::cout << "Exception: " << ex.what() << std::endl;
 
     if ( stream_file_input.is_open() )
     {
@@ -80,7 +94,9 @@ nanojson::element get_config( const std::string& config_path_file )
   }
   catch ( const std::exception &ex ) {
 
-    std::cout << ex.what() << std::endl;
+    hlogi( "Exception: %s", ex.what() );
+
+    //std::cout << ex.what() << std::endl;
 
   }
 
@@ -171,132 +187,53 @@ std::string trim( const std::string &s ) {
 
 // }
 
-StoreConnection::StoreConnection( const std::string& name,
-                                  const std::string& driver,
-                                  const std::string& database,
-                                  soci::session *sql_connection ):
-                                  name_( name ),
-                                  driver_( driver ),
-                                  database_( database ),
-                                  sql_connection_( sql_connection ),
-                                  redis_connection_( nullptr ),
-                                  mongo_client_( nullptr ),
-                                  mongo_connection_( nullptr ) {
+std::ostream& operator<<( std::ostream &stream, JSONElement &json_element ) {
 
-  //
+  stream << "Name: " << json_element[ "name" ].to_string() << std::endl;
+  stream << "Driver: " << json_element[ "driver" ].to_string() << std::endl;
+  stream << "Database: " << json_element[ "database" ].to_string() << std::endl;
+  stream << "Host: " << json_element[ "host" ].to_string() << std::endl;
+  stream << "Port: " << json_element[ "port" ].to_string() << std::endl;
+  stream << "User: " << json_element[ "user" ].to_string() << std::endl;
+  stream << "Password: " << json_element[ "password" ].to_string() << std::endl;
+  stream << "Pool: " << json_element[ "pool" ].to_string() << std::endl;
 
-}
-
-StoreConnection::StoreConnection( const std::string& name,
-                                  const std::string& driver,
-                                  const std::string& database,
-                                  sw::redis::Redis *redis_connection ):
-                                  name_( name ),
-                                  driver_( driver ),
-                                  database_( database ),
-                                  sql_connection_( nullptr ),
-                                  redis_connection_( redis_connection ),
-                                  mongo_client_( nullptr ),
-                                  mongo_connection_( nullptr ) {
-
-  //
+  return stream;
 
 }
 
-StoreConnection::StoreConnection( const std::string& name,
-                                  const std::string& driver,
-                                  const std::string& database,
-                                  mongocxx::client *mongo_client,
-                                  mongocxx::v_noabi::database *mongo_database ):
-                                  name_( name ),
-                                  driver_( driver ),
-                                  database_( database ),
-                                  sql_connection_( nullptr ),
-                                  redis_connection_( nullptr ),
-                                  mongo_client_( mongo_client ),
-                                  mongo_connection_( mongo_database ) {
-
-  //
-
-}
-
-StoreConnection::~StoreConnection() {
-
-  if ( sql_connection_ ) {
-
-    delete sql_connection_;
-    sql_connection_ = nullptr;
-
-  }
-
-  if ( redis_connection_ ) {
-
-    delete redis_connection_;
-    redis_connection_ = nullptr;
-
-  }
-
-  if ( mongo_connection_ ) {
-
-    delete mongo_connection_;
-    mongo_connection_ = nullptr;
-
-  }
-
-  if ( mongo_client_ ) {
-
-    delete mongo_client_;
-    mongo_client_ = nullptr;
-
-  }
-
-}
-
-soci::session* StoreConnection::sql_connection() const {
-
-  return sql_connection_;
-
-}
-
-sw::redis::Redis* StoreConnection::redis_connection() const {
-
-  return redis_connection_;
-
-}
-
-mongocxx::v_noabi::database* StoreConnection::mongo_connection() const {
-
-  return mongo_connection_;
-
-}
-
-StoreConnectionSharedPtr make_store_connection( nanojson::element database_connection_config ) {
+StoreConnectionSharedPtr make_store_connection( JSONElement &store_connection_config ) {
 
   StoreConnectionSharedPtr result { nullptr };
 
   try {
 
-    const std::string& name = database_connection_config[ "name" ].to_string();
+    const std::string& name = store_connection_config[ "name" ].to_string();
 
-    const std::string& driver = database_connection_config[ "driver" ].to_string();
+    const std::string& driver = store_connection_config[ "driver" ].to_string();
 
-    const std::string& database = database_connection_config[ "database" ].to_string();
+    const std::string& database = store_connection_config[ "database" ].to_string();
 
-    const std::string& host = database_connection_config[ "host" ].to_string();
+    const std::string& host = store_connection_config[ "host" ].to_string();
 
-    const std::string& port = database_connection_config[ "port" ].to_string();
+    const std::string& port = store_connection_config[ "port" ].to_string();
 
-    const std::string& user = database_connection_config[ "user" ].to_string();
+    const std::string& user = store_connection_config[ "user" ].to_string();
 
-    const std::string& password = database_connection_config[ "password" ].to_string();
+    const std::string& password = store_connection_config[ "password" ].to_string();
 
-    std::cout << "Name: " << name << std::endl;
-    std::cout << "Driver: " << driver << std::endl;
-    std::cout << "Database: " << database << std::endl;
-    std::cout << "Host: " << host << std::endl;
-    std::cout << "Port: " << port << std::endl;
-    std::cout << "User: " << user << std::endl;
-    std::cout << "Password: " << password << std::endl;
+    const u_int8_t pool = store_connection_config[ "pool" ].to_integer();
+
+    std::cout << store_connection_config << std::endl;
+
+    // std::cout << "Name: " << name << std::endl;
+    // std::cout << "Driver: " << driver << std::endl;
+    // std::cout << "Database: " << database << std::endl;
+    // std::cout << "Host: " << host << std::endl;
+    // std::cout << "Port: " << port << std::endl;
+    // std::cout << "User: " << user << std::endl;
+    // std::cout << "Password: " << password << std::endl;
+    // std::cout << "Pool: " << std::to_string( pool ) << std::endl;
 
     std::ostringstream connectionString;
 
@@ -307,6 +244,8 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
     connectionString << " password='" << password << "'";
 
     connectionString << " host=" << host;
+
+    connectionString << " port=" << port;
 
     if ( driver == "sql/mysql" ) {
 
@@ -321,12 +260,20 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hloge( "Exception: %s", ex.what() );
+        //hlogi( "Exception: Error" );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -353,12 +300,19 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -385,12 +339,19 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -417,12 +378,19 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -449,12 +417,19 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -481,12 +456,19 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -505,8 +487,8 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
       std::stringstream url;
       url << "mongodb://";
 
-      const std::string& user = trim( database_connection_config[ "user" ].to_string() );
-      const std::string& password = trim( database_connection_config[ "password" ].to_string() );
+      const std::string& user = trim( store_connection_config[ "user" ].to_string() );
+      const std::string& password = trim( store_connection_config[ "password" ].to_string() );
 
       if ( user != "" &&
            password != "" ) {
@@ -515,7 +497,7 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
 
       }
 
-      url << database_connection_config[ "host" ].to_string() <<  ":" << database_connection_config[ "port" ].to_string();
+      url << store_connection_config[ "host" ].to_string() <<  ":" << store_connection_config[ "port" ].to_string();
 
       mongocxx::client *mongo_client = nullptr;
       mongocxx::v_noabi::database *mongo_connection = nullptr;
@@ -527,13 +509,18 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
 
         mongo_client = new mongocxx::client( mongocxx::uri{ url.str() } );
 
-        mongo_connection = new mongocxx::v_noabi::database( mongo_client->database( database_connection_config[ "database" ].to_string() ) );
+        mongo_connection = new mongocxx::v_noabi::database( mongo_client->database( store_connection_config[ "database" ].to_string() ) );
 
         if ( mongo_client ) {
 
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       mongo_client,
                                                       mongo_connection ); //client[ database_connection_config[ "database" ].to_string() ] );
 
@@ -541,6 +528,8 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
 
       }
       catch ( const std::exception& ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -564,7 +553,7 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
     else if ( driver == "no_sql/redis" ) {
 
       std::stringstream url;
-      url << "tcp://" << database_connection_config[ "host" ].to_string() << ":" << database_connection_config[ "port" ].to_string();
+      url << "tcp://" << store_connection_config[ "host" ].to_string() << ":" << store_connection_config[ "port" ].to_string();
 
       sw::redis::Redis *connection = nullptr;
 
@@ -577,12 +566,19 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
           result = std::make_shared<StoreConnection>( name,
                                                       driver,
                                                       database,
+                                                      host,
+                                                      std::stoi( port ),
+                                                      user,
+                                                      password,
+                                                      pool,
                                                       connection );
 
         }
 
       }
       catch ( const std::exception &ex ) {
+
+        hlogi( "Exception: %s", ex.what() );
 
         std::cout << "Exception: " << ex.what() << std::endl;
 
@@ -595,8 +591,8 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
 
       }
 
-      const std::string& user = trim( database_connection_config[ "user" ].to_string() );
-      const std::string& password = trim( database_connection_config[ "password" ].to_string() );
+      const std::string& user = trim( store_connection_config[ "user" ].to_string() );
+      const std::string& password = trim( store_connection_config[ "password" ].to_string() );
 
       if ( user != "" &&
            password != "" ) {
@@ -615,6 +611,8 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
   }
   catch ( const std::exception& ex ) {
 
+    hloge( "Exception: %s", ex.what() );
+
     std::cout << "Exception: " << ex.what() << std::endl;
 
   }
@@ -623,86 +621,29 @@ StoreConnectionSharedPtr make_store_connection( nanojson::element database_conne
 
 }
 
+const std::string get_thread_id() {
 
-// NoSQLConnectionSharedPtr make_no_sql_db_connection( nanojson::element database_connection_config ) {
+  auto thread_id = std::this_thread::get_id();
 
-//   NoSQLConnectionSharedPtr result { nullptr };
+  std::stringstream ss;
 
-//   try {
+  ss << thread_id;
 
-//     const std::string& driver = database_connection_config[ "driver" ].to_string();
+  return ss.str();
 
-//     std::ostringstream connectionString;
+}
 
-//     connectionString << "driver=" + driver;
+const std::string xxHash_32( const std::string &to_hash ) {
 
-//     connectionString << "host=" + database_connection_config[ "host" ].to_string();
+  XXH32_hash_t xxhash32 = XXH32( to_hash.c_str(), to_hash.size(), 0 );
 
-//     connectionString << "database=" + database_connection_config[ "database" ].to_string();
+  std::stringstream ss;
 
-//     connectionString << "port=" + database_connection_config[ "port" ].to_string();
+  ss << std::hex << xxhash32;
 
-//     connectionString << "user=" + database_connection_config[ "user" ].to_string();
+  return ss.str();
 
-//     connectionString << "password='" + database_connection_config[ "password" ].to_string() << "'";
+}
 
-//     if ( driver == "no_sql/mongo_db" ) {
-
-//       std::stringstream url;
-//       url << "mongodb://";
-
-//       const std::string& user = trim( database_connection_config[ "user" ].to_string() );
-//       const std::string& password = trim( database_connection_config[ "password" ].to_string() );
-
-//       if ( user != "" &&
-//            password != "" ) {
-
-//         url << user << ":" << password << "@";
-
-//       }
-
-//       url << database_connection_config[ "host" ].to_string() <<  ":" << database_connection_config[ "port" ].to_string();
-
-//       //mongo "mongodb://${USER}:${DBPASSWORD}@<host>:<port>/admin?authSource=admin"
-//       mongocxx::client connection{ mongocxx::uri{ url.str() } }; // "mongodb://" + database_connection_config[ "host" ].to_string() + ":" + database_connection_config[ "port" ].to_string() } };
-
-//       //std::shared_ptr<mongocxx::v_noabi::database> database = std::make_shared<mongocxx::v_noabi::database>( connection[ database_connection_config[ "database" ].to_string() ] );
-//       result = std::make_shared<NoSQLConnectionVariant>( connection[ database_connection_config[ "database" ].to_string() ] );
-
-//     }
-//     else if ( driver == "no_sql/redis" ) {
-
-//       std::stringstream url;
-//       url << "tcp://" << database_connection_config[ "host" ].to_string() << ":" << database_connection_config[ "port" ].to_string();
-
-//       result = std::make_shared<NoSQLConnectionVariant>( url.str() );
-
-//       const std::string& user = trim( database_connection_config[ "user" ].to_string() );
-//       const std::string& password = trim( database_connection_config[ "password" ].to_string() );
-
-//       if ( user != "" &&
-//            password != "" ) {
-
-//         std::get<sw::redis::Redis>( *result ).auth( user, password );
-
-//       }
-//       else if ( password != "" ) {
-
-//         std::get<sw::redis::Redis>( *result ).auth( password );
-
-//       }
-
-//     }
-
-//   }
-//   catch ( const std::exception& ex ) {
-
-//     std::cout << "Exception: " << ex.what() << std::endl;
-
-//   }
-
-//   return result;
-
-// }
 
 }
