@@ -84,13 +84,22 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                 const std::string &kind = execute_block[ "TransactionId" ].is_string() ?
                                           Common::trim( execute_block[ "Kind" ].get<std::string>() ):
                                           "";
-                const std::string &command = execute_block[ "Command" ].is_string() ?
-                                             Common::trim( execute_block[ "Command" ].get<std::string>() ):
-                                             "";
+
+                nlohmann::json command_list;
+
+                if ( execute_block[ "Command" ].is_array() ) {
+
+                  command_list = execute_block[ "Command" ];
+
+                }
+
+                // const std::string &command = execute_block[ "Command" ].is_string() ?
+                //                              Common::trim( execute_block[ "Command" ].get<std::string>() ):
+                //                              "";
 
                 if ( Store::StoreConnectionManager::store_connection_name_exists( store ) ) {
 
-                  if ( command != "" ) {
+                  if ( command_list.size() > 0 ) {
 
                     if ( kind == "query" ||
                          kind == "insert" ||
@@ -142,95 +151,212 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
                                 if ( kind == "query" ) {
 
-                                  soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << command );
+                                  for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
 
-                                  auto data_list = hv::Json::array();
+                                    try {
 
-                                  for ( soci::rowset<soci::row>::const_iterator it = rs.begin(); it != rs.end(); ++it ) {
+                                      const std::string& command = Common::trim( command_list[ command_index ] );
 
-                                    soci::row const& row = *it;
+                                      if ( command != "" ) {
 
-                                    std::ostringstream doc;
+                                        soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << command );
 
-                                    //doc << "<row>" << std::endl;
-                                    doc << '{'; // << std::endl;
+                                        auto data_list = hv::Json::array();
 
-                                    for( std::size_t i = 0; i < row.size(); ++i ) {
+                                        for ( soci::rowset<soci::row>::const_iterator it = rs.begin(); it != rs.end(); ++it ) {
 
-                                      auto props = row.get_properties( i );
+                                          soci::row const& row = *it;
 
-                                      //doc << '<' << props.get_name() << '>';
-                                      doc << '\"' << props.get_name() << "\":";
+                                          std::ostringstream doc;
 
-                                      if ( row.get_indicator( i ) != soci::i_null ) {
+                                          doc << '{';
 
-                                        switch( props.get_data_type() ) {
-                                          case soci::dt_string:
-                                              doc << '\"' << row.get<std::string>( i ) << "\"";
-                                              break;
-                                          case soci::dt_double:
-                                              doc << row.get<double>( i );
-                                              break;
-                                          case soci::dt_integer:
-                                              doc << row.get<int>( i );
-                                              break;
-                                          case soci::dt_long_long:
-                                              doc << row.get<long long>( i );
-                                              break;
-                                          case soci::dt_unsigned_long_long:
-                                              doc << row.get<unsigned long long>( i );
-                                              break;
-                                          case soci::dt_date:
-                                              std::tm when = row.get<std::tm>( i );
-                                              doc << '\"' << asctime( &when ) << "\"";
-                                              break;
+                                          for( std::size_t i = 0; i < row.size(); ++i ) {
+
+                                            auto props = row.get_properties( i );
+
+                                            doc << '\"' << props.get_name() << "\":";
+
+                                            if ( row.get_indicator( i ) != soci::i_null ) {
+
+                                              switch( props.get_data_type() ) {
+                                                case soci::dt_string:
+                                                    doc << '\"' << row.get<std::string>( i ) << "\"";
+                                                    break;
+                                                case soci::dt_double:
+                                                    doc << row.get<double>( i );
+                                                    break;
+                                                case soci::dt_integer:
+                                                    doc << row.get<int>( i );
+                                                    break;
+                                                case soci::dt_long_long:
+                                                    doc << row.get<long long>( i );
+                                                    break;
+                                                case soci::dt_unsigned_long_long:
+                                                    doc << row.get<unsigned long long>( i );
+                                                    break;
+                                                case soci::dt_date:
+                                                    std::tm when = row.get<std::tm>( i );
+                                                    doc << '\"' << asctime( &when ) << "\"";
+                                                    break;
+                                              }
+
+                                            }
+                                            else {
+
+                                              doc << "null";
+
+                                            }
+
+                                            if ( i < row.size() - 1 ) {
+
+                                              doc << ",";
+
+                                            }
+
+                                          }
+
+                                          doc << "}" << std::endl;
+
+                                          data_list.push_back( hv::Json::parse( doc.str() ) );
+
                                         }
+
+                                        result[ "Count" ] = result[ "Count" ].get<int>() + 1;
+                                        result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = data_list;
 
                                       }
                                       else {
 
-                                        doc << "null";
+                                        auto result_error = R"(
+                                                                {
+                                                                  "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                                  "Message": "The command cannot be empty",
+                                                                  "Mark": "2951E9E3F368-",
+                                                                  "Details": {
+                                                                               "Id": "",
+                                                                               "Store": "",
+                                                                               "Message": ""
+                                                                             }
+                                                                }
+                                                              )"_json;
+
+                                        result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                                        result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
+                                        result_error[ "Details" ][ "Store" ] = store;
+
+                                        //result[ "Errors" ].push_back( result_error );
+                                        result[ "Errors" ][ execute_id ] = result_error;
 
                                       }
 
-                                      if ( i < row.size() - 1 ) {
+                                    }
+                                    catch ( const std::exception &ex ) {
 
-                                        doc << ","; // << std::endl;
+                                      auto result_error = R"(
+                                                              {
+                                                                "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                                "Message": "Unexpected error to execute command",
+                                                                "Mark": "B7A7E280921C-",
+                                                                "Details": {
+                                                                             "Id": "",
+                                                                             "Store": "",
+                                                                             "Message": ""
+                                                                           }
+                                                              }
+                                                            )"_json;
 
-                                      }
-                                      //doc << "</" << props.get_name() << '>' << std::endl;
+                                      result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                                      result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
+                                      result_error[ "Details" ][ "Store" ] = store;
+                                      result_error[ "Details" ][ "Message" ] = ex.what();
+
+                                      //result[ "Errors" ].push_back( result_error );
+                                      result[ "Errors" ][ execute_id ] = result_error;
 
                                     }
 
-                                    //doc << "</row>" << std::endl;
-                                    doc << "}" << std::endl;
-
-                                    //<< std::endl
-
-                                    //std::cout << doc.str();
-
-                                    data_list.push_back( hv::Json::parse( doc.str() ) );
-                                    //result[ "Data" ][ execute_id ] = hv::Json::array();
-
                                   }
-
-                                  result[ "Count" ] = result[ "Count" ].get<int>() + 1;
-                                  result[ "Data" ][ execute_id ] = data_list;
 
                                 }
                                 else {  //if ( kind == "insert" || kind == "update" || kind == "delete" ) {
 
-                                  soci::statement st = ( store_connection->sql_connection()->prepare << command );
-                                  st.execute( true );
+                                  for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
 
-                                  auto affected_rows = st.get_affected_rows();
+                                    try {
 
-                                  auto data_list = hv::Json::array();
+                                      const std::string& command = Common::trim( command_list[ command_index ] );
 
-                                  data_list.push_back( hv::Json::parse( "{ \"Kind\": \"" + kind + "\", \"AffectedRows\": " + std::to_string( affected_rows ) + " }" ) );
+                                      if ( command != "" ) {
 
-                                  result[ "Count" ] = result[ "Count" ].get<int>() + 1;
-                                  result[ "Data" ][ execute_id ] = data_list;
+                                        soci::statement st = ( store_connection->sql_connection()->prepare << command );
+                                        st.execute( true );
+
+                                        auto affected_rows = st.get_affected_rows();
+
+                                        auto data_list = hv::Json::array();
+
+                                        data_list.push_back( hv::Json::parse( "{ \"Kind\": \"" + kind + "\", \"AffectedRows\": " + std::to_string( affected_rows ) + " }" ) );
+
+                                        result[ "Count" ] = result[ "Count" ].get<int>() + 1;
+                                        result[ "Data" ][ execute_id ] = data_list;
+
+                                      }
+                                      else {
+
+                                        auto result_error = R"(
+                                                                {
+                                                                  "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                                  "Message": "The command cannot be empty",
+                                                                  "Mark": "3041681AFB1D-",
+                                                                  "Details": {
+                                                                               "Id": "",
+                                                                               "Store": "",
+                                                                               "Message": ""
+                                                                             }
+                                                                }
+                                                              )"_json;
+
+                                        result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                                        result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
+                                        result_error[ "Details" ][ "Store" ] = store;
+
+                                        //result[ "Errors" ].push_back( result_error );
+                                        result[ "Errors" ][ execute_id ] = result_error;
+
+                                      }
+
+                                    }
+                                    catch ( const std::exception &ex ) {
+
+                                      auto result_error = R"(
+                                                              {
+                                                                "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                                "Message": "Unexpected error to execute command",
+                                                                "Mark": "0C3A234CF7F3-",
+                                                                "Details": {
+                                                                             "Id": "",
+                                                                             "Store": "",
+                                                                             "Message": ""
+                                                                           }
+                                                              }
+                                                            )"_json;
+
+                                      result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                                      result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
+                                      result_error[ "Details" ][ "Store" ] = store;
+                                      result_error[ "Details" ][ "Message" ] = ex.what();
+
+                                      //result[ "Errors" ].push_back( result_error );
+                                      result[ "Errors" ][ execute_id ] = result_error;
+
+                                    }
+
+                                  }
 
                                 }
 
@@ -476,7 +602,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                     auto result_error = R"(
                                             {
                                               "Code": "ERROR_MISSING_FIELD_COMMAND",
-                                              "Message": "The field Command is required and cannot be empty or null",
+                                              "Message": "The field Command is required as array of strings and cannot be empty or null",
                                               "Mark": "C4492DAB7BC8-",
                                               "Details": {
                                                            "Id": "",
