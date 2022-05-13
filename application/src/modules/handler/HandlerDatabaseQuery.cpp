@@ -1,13 +1,15 @@
 #include <string>
 
-#include "hv/hlog.h"
-#include "hv/HttpServer.h"
-#include "hv/hssl.h"
-#include "hv/hmain.h"
-#include "hv/hthread.h"
-#include "hv/hasync.h"     // import hv::async
-#include "hv/requests.h"   // import requests::async
-#include "hv/hdef.h"
+#include <boost/algorithm/string.hpp>
+
+#include <hv/hlog.h>
+#include <hv/HttpServer.h>
+#include <hv/hssl.h>
+#include <hv/hmain.h>
+#include <hv/hthread.h>
+#include <hv/hasync.h>     // import hv::async
+#include <hv/requests.h>   // import requests::async
+#include <hv/hdef.h>
 
 #include "../modules/common/Common.hpp"
 
@@ -50,7 +52,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
             auto execute_list = json_body[ "Execute" ];  //.array();
 
-            auto execute_list_size = json_body[ "Execute" ].size();
+            std::size_t execute_list_size = 0; //json_body[ "Execute" ].size();
 
             // auto result = R"(
             //                   {
@@ -149,15 +151,21 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
                               try {
 
-                                if ( kind == "query" ) {
+                                for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
 
-                                  for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
+                                  try {
 
-                                    try {
+                                    const std::string& command = Common::trim( command_list[ command_index ] );
 
-                                      const std::string& command = Common::trim( command_list[ command_index ] );
+                                    if ( command != "" ) {
 
-                                      if ( command != "" ) {
+                                      std::string sql_command { command.substr( 0, 6 ) };
+
+                                      boost::algorithm::to_lower( sql_command ); //.starts_with( "select" );
+
+                                      bool select_sql = sql_command.starts_with( "select" );
+
+                                      if ( select_sql ) {
 
                                         soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << command );
 
@@ -228,69 +236,6 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                       }
                                       else {
 
-                                        auto result_error = R"(
-                                                                {
-                                                                  "Code": "ERROR_TO_EXECUTE_COMMAND",
-                                                                  "Message": "The command cannot be empty",
-                                                                  "Mark": "2951E9E3F368-",
-                                                                  "Details": {
-                                                                               "Id": "",
-                                                                               "Store": "",
-                                                                               "Message": ""
-                                                                             }
-                                                                }
-                                                              )"_json;
-
-                                        result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
-
-                                        result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
-                                        result_error[ "Details" ][ "Store" ] = store;
-
-                                        //result[ "Errors" ].push_back( result_error );
-                                        result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
-
-                                      }
-
-                                    }
-                                    catch ( const std::exception &ex ) {
-
-                                      auto result_error = R"(
-                                                              {
-                                                                "Code": "ERROR_TO_EXECUTE_COMMAND",
-                                                                "Message": "Unexpected error to execute command",
-                                                                "Mark": "B7A7E280921C-",
-                                                                "Details": {
-                                                                             "Id": "",
-                                                                             "Store": "",
-                                                                             "Message": ""
-                                                                           }
-                                                              }
-                                                            )"_json;
-
-                                      result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
-
-                                      result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
-                                      result_error[ "Details" ][ "Store" ] = store;
-                                      result_error[ "Details" ][ "Message" ] = ex.what();
-
-                                      //result[ "Errors" ].push_back( result_error );
-                                      result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
-
-                                    }
-
-                                  }
-
-                                }
-                                else {  //if ( kind == "insert" || kind == "update" || kind == "delete" ) {
-
-                                  for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
-
-                                    try {
-
-                                      const std::string& command = Common::trim( command_list[ command_index ] );
-
-                                      if ( command != "" ) {
-
                                         soci::statement st = ( store_connection->sql_connection()->prepare << command );
                                         st.execute( true );
 
@@ -304,39 +249,15 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                         result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = data_list;
 
                                       }
-                                      else {
-
-                                        auto result_error = R"(
-                                                                {
-                                                                  "Code": "ERROR_TO_EXECUTE_COMMAND",
-                                                                  "Message": "The command cannot be empty",
-                                                                  "Mark": "3041681AFB1D-",
-                                                                  "Details": {
-                                                                               "Id": "",
-                                                                               "Store": "",
-                                                                               "Message": ""
-                                                                             }
-                                                                }
-                                                              )"_json;
-
-                                        result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
-
-                                        result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
-                                        result_error[ "Details" ][ "Store" ] = store;
-
-                                        //result[ "Errors" ].push_back( result_error );
-                                        result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
-
-                                      }
 
                                     }
-                                    catch ( const std::exception &ex ) {
+                                    else {
 
                                       auto result_error = R"(
                                                               {
                                                                 "Code": "ERROR_TO_EXECUTE_COMMAND",
-                                                                "Message": "Unexpected error to execute command",
-                                                                "Mark": "0C3A234CF7F3-",
+                                                                "Message": "The command cannot be empty",
+                                                                "Mark": "2951E9E3F368-",
                                                                 "Details": {
                                                                              "Id": "",
                                                                              "Store": "",
@@ -349,7 +270,6 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
                                       result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
                                       result_error[ "Details" ][ "Store" ] = store;
-                                      result_error[ "Details" ][ "Message" ] = ex.what();
 
                                       //result[ "Errors" ].push_back( result_error );
                                       result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
@@ -357,6 +277,33 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                     }
 
                                   }
+                                  catch ( const std::exception &ex ) {
+
+                                    auto result_error = R"(
+                                                            {
+                                                              "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                              "Message": "Unexpected error to execute command",
+                                                              "Mark": "B7A7E280921C-",
+                                                              "Details": {
+                                                                           "Id": "",
+                                                                           "Store": "",
+                                                                           "Message": ""
+                                                                         }
+                                                            }
+                                                          )"_json;
+
+                                    result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                                    result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
+                                    result_error[ "Details" ][ "Store" ] = store;
+                                    result_error[ "Details" ][ "Message" ] = ex.what();
+
+                                    //result[ "Errors" ].push_back( result_error );
+                                    result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
+
+                                  }
+
+                                  execute_list_size += 1;
 
                                 }
 
