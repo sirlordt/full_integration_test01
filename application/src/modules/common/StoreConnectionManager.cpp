@@ -8,7 +8,7 @@ namespace Store {
 
 //Common::JSONElementObject &store_alias_config_list
 
-bool StoreConnectionManager::init_stores_connections( Common::JSONElementArray &store_connections_config_list ) {
+bool StoreConnectionManager::init_stores_connections( Common::NJSONElementArray &store_connections_config_list ) {
 
   bool result { false };
 
@@ -123,7 +123,7 @@ bool StoreConnectionManager::init_stores_connections( Common::JSONElementArray &
 
 }
 
-bool StoreConnectionManager::init_stores_connections_alias( Common::JSONElementObject &stores_connections_alias_config_list ) {
+bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElementObject &stores_connections_alias_config_list ) {
 
   bool result { false };
 
@@ -135,7 +135,7 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::JSONElementO
 
       if ( Common::trim( it->first ) != "" ) {
 
-        if ( it->second.is_string()  &&
+        if ( it->second.is_string() &&
              Common::trim( it->second.to_string() ) != "" ) {
 
           if ( map_name_to_queue_store_connection_.find( it->second ) != map_name_to_queue_store_connection_.end() ) {
@@ -239,7 +239,7 @@ StoreConnectionSharedPtr StoreConnectionManager::lease_store_connection_by_name(
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -277,7 +277,7 @@ bool StoreConnectionManager::return_leased_store_connection( StoreConnectionShar
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -304,7 +304,7 @@ StoreSQLConnectionTransactionPtr StoreConnectionManager::transaction_by_id( cons
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -334,7 +334,7 @@ bool StoreConnectionManager::register_transaction_to_id( const std::string& id,
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -363,7 +363,7 @@ bool StoreConnectionManager::unregister_transaction_by_id( const std::string& id
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -390,7 +390,7 @@ StoreConnectionSharedPtr StoreConnectionManager::store_connection_by_id( const s
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -420,7 +420,7 @@ bool StoreConnectionManager::register_store_connection_to_id( const std::string&
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 
@@ -449,7 +449,7 @@ bool StoreConnectionManager::unregister_store_connection_by_id( const std::strin
 
     hloge( "Exception: %s", ex.what() );
 
-    //std::cout << "Exception: " << ex.what() << std::endl;
+    std::cout << "Exception: " << ex.what() << std::endl;
 
   }
 

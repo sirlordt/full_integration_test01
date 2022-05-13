@@ -15,61 +15,6 @@
 
 #include "Handlers.hpp"
 
-/*
-
-  result = {
-             StatusCode: 200, //Ok
-             Code: "SUCCESS_GET_DRIVER_POSITION",
-             Message: await I18NManager.translate( strLanguage, "Success get driver position." ),
-             Mark: "AECC8FB185E4" + ( cluster.worker && cluster.worker.id ? "-" + cluster.worker.id : "" ),
-             LogId: null,
-             IsError: false,
-             Errors: [],
-             Warnings: [],
-             Count: lastDriverPositionList.length,
-             Data: lastDriverPositionList
-           };
-
-  result = {
-             StatusCode: 400, //Bad request
-             Code: "ERROR_UNKNOWN_MODEL",
-             Message: strMessage,
-             Mark: "5AA705EE0690" + ( cluster.worker && cluster.worker.id ? "-" + cluster.worker.id : "" ),
-             LogId: null,
-             IsError: true,
-             Errors: [
-                       {
-                         Code: "ERROR_UNKNOWN_MODEL",
-                         Message: strMessage,
-                         Details: null
-                       }
-                     ],
-             Warnings: [],
-             Count: 0,
-             Data: []
-           };
-
-  result = {
-             StatusCode: 500, //Internal server error
-             Code: "ERROR_UNEXPECTED",
-             Message: "Unexpected error. Please read the server log for more details.",
-             LogId: error.LogId,
-             Mark: strMark,
-             IsError: true,
-             Errors: [
-                       {
-                         Code: error.name,
-                         Message: error.message,
-                         Details: await SystemUtilities.processErrorDetails( error ) //error
-                       }
-                     ],
-             Warnings: [],
-             Count: 0,
-             Data: []
-           };
-
-*/
-
 namespace Handlers {
 
 int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
@@ -135,14 +80,12 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                                         "Mark": "1D0EA78D055E-",
                                         "Log": null,
                                         "IsError": false,
-                                        "Errors": [],
-                                        "Warnings": [],
+                                        "Errors": {},
+                                        "Warnings": {},
                                         "Count": 1,
-                                        "Data": [
-                                                  {
-                                                    "TransactionId": ""
-                                                  }
-                                                ]
+                                        "Data": {
+                                                  "TransactionId": ""
+                                                }
                                       }
                                     )"_json;
 
@@ -150,10 +93,13 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
                     result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
-                    result[ "Data" ][ 0 ][ "TransactionId" ] = transaction_id;
+                    result[ "Data" ][ "TransactionId" ] = transaction_id;
+
+                    ctx->response->content_type = APPLICATION_JSON;
+                    ctx->response->body = result.dump( 2 );
 
                     //result[ "Message" ] = ex.what();
-                    ctx->response->Json( result );
+                    //ctx->response->Json( result );
 
                   }
                   else {
@@ -168,16 +114,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                                         "Mark": "87A015B5FB0A-",
                                         "Log": null,
                                         "IsError": true,
-                                        "Errors": [
-                                                    {
-                                                      "Code": "ERROR_STORE_CONNECTION_IS_NOT_SQL_KIND",
-                                                      "Message": "The Store connection is not SQL kind",
-                                                      "Details": null
-                                                    }
-                                                  ],
-                                        "Warnings": [],
+                                        "Errors": {},
+                                        "Warnings": {},
                                         "Count": 0,
-                                        "Data": []
+                                        "Data": {}
                                       }
                                     )"_json;
 
@@ -185,8 +125,11 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
                     result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+                    ctx->response->content_type = APPLICATION_JSON;
+                    ctx->response->body = result.dump( 2 );
+
                     //result[ "Message" ] = ex.what();
-                    ctx->response->Json( result );
+                    //ctx->response->Json( result );
 
                   }
 
@@ -203,16 +146,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                                       "Mark": "AE7EDEF5C086-",
                                       "Log": null,
                                       "IsError": true,
-                                      "Errors": [
-                                                  {
-                                                    "Code": "ERROR_NO_STORE_CONNECTION_AVAILABLE_IN_POOL",
-                                                    "Message": "No more Store connection available in pool to begin transaction",
-                                                    "Details": null
-                                                  }
-                                                ],
-                                      "Warnings": [],
+                                      "Errors": {},
+                                      "Warnings": {},
                                       "Count": 0,
-                                      "Data": []
+                                      "Data": {}
                                     }
                                   )"_json;
 
@@ -220,8 +157,11 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
                   result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+                  ctx->response->content_type = APPLICATION_JSON;
+                  ctx->response->body = result.dump( 2 );
+
                   //result[ "Message" ] = ex.what();
-                  ctx->response->Json( result );
+                  //ctx->response->Json( result );
 
                 }
 
@@ -238,14 +178,12 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                                     "Mark": "62346B62C268-",
                                     "Log": null,
                                     "IsError": false,
-                                    "Errors": [],
-                                    "Warnings": [],
+                                    "Errors": {},
+                                    "Warnings": {},
                                     "Count": 1,
-                                    "Data": [
-                                              {
-                                                "TransactionId": ""
-                                              }
-                                            ]
+                                    "Data": {
+                                              "TransactionId": ""
+                                            }
                                   }
                                 )"_json;
 
@@ -253,10 +191,13 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
                 result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
-                result[ "Data" ][ 0 ][ "TransactionId" ] = transaction_id;
+                result[ "Data" ][ "TransactionId" ] = transaction_id;
+
+                ctx->response->content_type = APPLICATION_JSON;
+                ctx->response->body = result.dump( 2 );
 
                 //result[ "Message" ] = ex.what();
-                ctx->response->Json( result );
+                //ctx->response->Json( result );
 
               }
 
@@ -273,16 +214,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                                   "Mark": "4E31F33D4145-",
                                   "Log": null,
                                   "IsError": true,
-                                  "Errors": [
-                                              {
-                                                "Code": "ERROR_STORE_NAME_NOT_FOUND",
-                                                "Message": "The Store name not found",
-                                                "Details": null
-                                              }
-                                            ],
-                                  "Warnings": [],
+                                  "Errors": {},
+                                  "Warnings": {},
                                   "Count": 0,
-                                  "Data": []
+                                  "Data": {}
                                 }
                               )"_json;
 
@@ -290,8 +225,11 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
               result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+              ctx->response->content_type = APPLICATION_JSON;
+              ctx->response->body = result.dump( 2 );
+
               //result[ "Message" ] = ex.what();
-              ctx->response->Json( result );
+              //ctx->response->Json( result );
 
             }
 
@@ -304,20 +242,14 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                               {
                                 "StatusCode": 400,
                                 "Code": "ERROR_MISSING_FIELD_STORE",
-                                "Message": "The field Store is required and not empty and not null",
+                                "Message": "The field Store is required and cannot be empty or null",
                                 "Mark": "BA4BF3C5FF90-",
                                 "Log": null,
                                 "IsError": true,
-                                "Errors": [
-                                            {
-                                              "Code": "ERROR_MISSING_FIELD_STORE",
-                                              "Message": "The field Store is required and not empty and not null",
-                                              "Details": null
-                                            }
-                                          ],
-                                "Warnings": [],
+                                "Errors": {},
+                                "Warnings": {},
                                 "Count": 0,
-                                "Data": []
+                                "Data": {}
                               }
                             )"_json;
 
@@ -325,8 +257,11 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
             result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+            ctx->response->content_type = APPLICATION_JSON;
+            ctx->response->body = result.dump( 2 );
+
             //result[ "Message" ] = ex.what();
-            ctx->response->Json( result );
+            //ctx->response->Json( result );
 
           }
 
@@ -341,16 +276,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                               "Mark": "3501F233B5AB-",
                               "Log": null,
                               "IsError": true,
-                              "Errors": [
-                                          {
-                                            "Code": "ERROR_AUTHORIZATION_TOKEN_NOT_VALID",
-                                            "Message": "The authorization token provided is not valid or not found",
-                                            "Details": null
-                                          }
-                                        ],
-                              "Warnings": [],
+                              "Errors": {},
+                              "Warnings": {},
                               "Count": 0,
-                              "Data": []
+                              "Data": {}
                             }
                           )"_json;
 
@@ -369,16 +298,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                               "Mark": "D00B72B67A38-",
                               "Log": null,
                               "IsError": true,
-                              "Errors": [
-                                          {
-                                            "Code": "ERROR_NOT_ALLOWED_ACCESS_TO_STORE",
-                                            "Message": "Not allowed access to store",
-                                            "Details": null
-                                          }
-                                        ],
-                              "Warnings": [],
+                              "Errors": {},
+                              "Warnings": {},
                               "Count": 0,
-                              "Data": []
+                              "Data": {}
                             }
                           )"_json;
 
@@ -397,20 +320,14 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                           {
                             "StatusCode": 400,
                             "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
-                            "Message": "The field Autorization is required and not empty and not null",
+                            "Message": "The field Autorization is required and cannot be empty or null",
                             "Mark": "BA4BF3C5FF90-",
                             "Log": null,
                             "IsError": true,
-                            "Errors": [
-                                        {
-                                          "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
-                                          "Message": "The field Autorization is required and not empty and not null",
-                                          "Details": null
-                                        }
-                                      ],
-                            "Warnings": [],
+                            "Errors": {},
+                            "Warnings": {},
                             "Count": 0,
-                            "Data": []
+                            "Data": {}
                           }
                         )"_json;
 
@@ -418,8 +335,11 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
         result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+        ctx->response->content_type = APPLICATION_JSON;
+        ctx->response->body = result.dump( 2 );
+
         //result[ "Message" ] = ex.what();
-        ctx->response->Json( result );
+        //ctx->response->Json( result );
 
         //hlogw( "Exception: %s", ex.what() );
 
@@ -438,16 +358,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                           "Mark": "BA4BF3C5FF90-",
                           "Log": null,
                           "IsError": true,
-                          "Errors": [
-                                      {
-                                        "Code": "ERROR_INVALID_JSON_BODY_DATA",
-                                        "Message": "Must be a valid json data format",
-                                        "Details": null
-                                      }
-                                    ],
-                          "Warnings": [],
+                          "Errors": {},
+                          "Warnings": {},
                           "Count": 0,
-                          "Data": []
+                          "Data": {}
                         }
                       )"_json;
 
@@ -456,9 +370,12 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
       result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
       //result[ "Message" ] = ex.what();
-      result[ "Errors" ][ 0 ][ "Message" ] = ex.what();
+      result[ "Errors" ][ "Message" ] = ex.what();
 
-      ctx->response->Json( result );
+      ctx->response->content_type = APPLICATION_JSON;
+      ctx->response->body = result.dump( 2 );
+
+      //ctx->response->Json( result );
 
       hloge( "Exception: %s", ex.what() );
 
@@ -477,16 +394,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
                         "Mark": "5AA705EE0690-",
                         "Log": null,
                         "IsError": true,
-                        "Errors": [
-                                    {
-                                      "Code": "JSON_BODY_FORMAT_REQUIRED",
-                                      "Message": "JSON format is required",
-                                      "Details": null
-                                    }
-                                  ],
-                        "Warnings": [],
+                        "Errors": {},
+                        "Warnings": {},
                         "Count": 0,
-                        "Data": []
+                        "Data": {}
                       }
                     )"_json;
 
@@ -494,7 +405,10 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
 
     result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
-    ctx->response->Json( result );
+    ctx->response->content_type = APPLICATION_JSON;
+    ctx->response->body = result.dump( 2 );
+
+    //ctx->response->Json( result );
 
   }
 

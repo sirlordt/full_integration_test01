@@ -6,6 +6,9 @@
 #include <memory>
 #include <regex>
 
+#include <hv/json.hpp>
+//#include "fifo_map.hpp"
+
 #include <nanojson/nanojson.hpp>
 
 #include <uuid_v4/uuid_v4.h>
@@ -50,11 +53,16 @@ std::string trim( const std::string &s );
 using Store::StoreConnectionSharedPtr;
 using Store::StoreConnection;
 
-using JSONElement = nanojson::element;
-using JSONElementArray = nanojson::element::array_t;
-using JSONElementObject = nanojson::element::object_t;
+using NJSONElement = nanojson::element;
+using NJSONElementArray = nanojson::element::array_t;
+using NJSONElementObject = nanojson::element::object_t;
 
-StoreConnectionSharedPtr make_store_connection( JSONElement &config_json );
+// A workaround to give to use fifo_map as map, we are just ignoring the 'less' compare
+// template<class K, class V, class dummy_compare, class A>
+// using custom_fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
+using NLOJSONObject = nlohmann::ordered_json; //nlohmann::basic_json<custom_fifo_map>; //
+
+StoreConnectionSharedPtr make_store_connection( NJSONElement &config_json );
 
 const std::string get_thread_id();
 const std::string xxHash_32( const std::string &to_hash );

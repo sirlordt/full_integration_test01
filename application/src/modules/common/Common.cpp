@@ -187,7 +187,7 @@ std::string trim( const std::string &s ) {
 
 // }
 
-std::ostream& operator<<( std::ostream &stream, JSONElement &json_element ) {
+std::ostream& operator<<( std::ostream &stream, NJSONElement &json_element ) {
 
   stream << "Name: " << json_element[ "name" ].to_string() << std::endl;
   stream << "Driver: " << json_element[ "driver" ].to_string() << std::endl;
@@ -202,7 +202,7 @@ std::ostream& operator<<( std::ostream &stream, JSONElement &json_element ) {
 
 }
 
-StoreConnectionSharedPtr make_store_connection( JSONElement &store_connection_config ) {
+StoreConnectionSharedPtr make_store_connection( NJSONElement &store_connection_config ) {
 
   StoreConnectionSharedPtr result { nullptr };
 
@@ -224,7 +224,7 @@ StoreConnectionSharedPtr make_store_connection( JSONElement &store_connection_co
 
     const u_int8_t pool = store_connection_config[ "pool" ].to_integer();
 
-    std::cout << store_connection_config << std::endl;
+    //std::cout << store_connection_config << std::endl;
 
     // std::cout << "Name: " << name << std::endl;
     // std::cout << "Driver: " << driver << std::endl;

@@ -45,7 +45,7 @@
 
 #include "modules/common/StoreConnectionManager.hpp"
 
-Common::JSONElement config_json;
+Common::NJSONElement config_json;
 
 /*
  * #define TEST_HTTPS 1
@@ -359,7 +359,7 @@ int main( int argc, char** argv ) {
   // server.worker_processes = 4;
   // uncomment to test multi-threads
 
-  hlogi("(Before) Log file is: %s", g_main_ctx.logfile);
+  //hlogi("(Before) Log file is: %s", g_main_ctx.logfile);
 
   int threads = std::stoi( config_json[ "threads" ] );
 
@@ -367,42 +367,42 @@ int main( int argc, char** argv ) {
 
   http_server_run( &server, 0 );
 
-  std::string password = "top_secret";
+  // std::string password = "top_secret";
 
-  // ***** BCRYPT *****
-  std::string hash = bcrypt::generateHash( password );
+  // // ***** BCRYPT *****
+  // std::string hash = bcrypt::generateHash( password );
 
-  std::cout << "Hash: " << hash << std::endl;
+  // std::cout << "Hash: " << hash << std::endl;
 
-  std::cout << "\"" << password << "\" : " << bcrypt::validatePassword( password, hash ) << std::endl;
-  std::cout << "\"wrong\" : " << bcrypt::validatePassword( "wrong", hash ) << std::endl;
-  // ***** BCRYPT *****
+  // std::cout << "\"" << password << "\" : " << bcrypt::validatePassword( password, hash ) << std::endl;
+  // std::cout << "\"wrong\" : " << bcrypt::validatePassword( "wrong", hash ) << std::endl;
+  // // ***** BCRYPT *****
 
-  // ***** XXHASH *****
-  // XXH64_hash_t xxhash64 = XXH64(password.c_str(), password.length(), 0);
+  // // ***** XXHASH *****
+  // // XXH64_hash_t xxhash64 = XXH64(password.c_str(), password.length(), 0);
 
-  XXH32_hash_t xxhash32 = XXH32( password.c_str(), password.length(), 0 );
+  // XXH32_hash_t xxhash32 = XXH32( password.c_str(), password.length(), 0 );
 
-  //From Dec => Hex
-  std::stringstream ss;
-  ss<< std::hex << xxhash32; // int decimal_value
-  std::string res ( ss.str() );
-
-  std::cout << "xxHahs32: " << res << std::endl;
-
-  //From Hex => Dec
+  // //From Dec => Hex
   // std::stringstream ss;
-  // ss  << hex_value ; // std::string hex_value
-  // ss >> std::hex >> decimal_value ; //int decimal_value
+  // ss<< std::hex << xxhash32; // int decimal_value
+  // std::string res ( ss.str() );
 
-  // std::cout << decimal_value ;
-  // ***** XXHASH *****
+  // std::cout << "xxHahs32: " << res << std::endl;
 
-  if ( config_json[ "base_path" ].is_defined() ) {
+  // //From Hex => Dec
+  // // std::stringstream ss;
+  // // ss  << hex_value ; // std::string hex_value
+  // // ss >> std::hex >> decimal_value ; //int decimal_value
 
-    std::cout << "config_json[ \"base_path\" ] = " << config_json[ "base_path" ].to_string() << std::endl;
+  // // std::cout << decimal_value ;
+  // // ***** XXHASH *****
 
-  }
+  // if ( config_json[ "base_path" ].is_defined() ) {
+
+  //   std::cout << "config_json[ \"base_path\" ] = " << config_json[ "base_path" ].to_string() << std::endl;
+
+  // }
 
   // if ( config_json[ "databases" ].is_defined() ) {
 
@@ -410,135 +410,135 @@ int main( int argc, char** argv ) {
 
   //   Store::StoreConnectionManager::init_connection_manager( databases_connection_config );
 
-    auto store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( "sql_01" );
+    // auto store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( "sql_01" );
 
-    /*
-    for ( auto & database_connection_config: databases_connection_config  ) {
+    // /*
+    // for ( auto & database_connection_config: databases_connection_config  ) {
 
-      auto store_connection = Common::make_store_connection( database_connection_config );
-      */
+    //   auto store_connection = Common::make_store_connection( database_connection_config );
+    //   */
 
-      if ( store_connection ) {
+    //   if ( store_connection ) {
 
-        std::cout << "Connection index: " << store_connection->index() << std::endl;
+    //     std::cout << "Connection index: " << store_connection->index() << std::endl;
 
-        if ( store_connection->sql_connection() ) {
+    //     if ( store_connection->sql_connection() ) {
 
-          std::cout << "*** SQL = " << store_connection->sql_connection()->get_backend_name() << " ***" << std::endl;
+    //       std::cout << "*** SQL = " << store_connection->sql_connection()->get_backend_name() << " ***" << std::endl;
 
-          soci::transaction *transaction { nullptr };
+    //       soci::transaction *transaction { nullptr };
 
-          try {
+    //       try {
 
-            transaction = store_connection->sql_connection()->begin();
+    //         transaction = store_connection->sql_connection()->begin();
 
-            const std::string id = "";
+    //         const std::string id = "";
 
-            soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << "Select * From sysPerson where Id != :id", soci::use( id, "id" ) );
+    //         soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << "Select * From sysPerson where Id != :id", soci::use( id, "id" ) );
 
-            for ( soci::rowset<soci::row>::const_iterator it = rs.begin(); it != rs.end(); ++it ) {
+    //         for ( soci::rowset<soci::row>::const_iterator it = rs.begin(); it != rs.end(); ++it ) {
 
-              soci::row const& row = *it;
+    //           soci::row const& row = *it;
 
-              std::string const& extra_data = row.get_indicator( "ExtraData" ) == soci::i_null ? "NULL": row.get<std::string>( "ExtraData" );
+    //           std::string const& extra_data = row.get_indicator( "ExtraData" ) == soci::i_null ? "NULL": row.get<std::string>( "ExtraData" );
 
-              // dynamic data extraction from each row:
-              std::cout << "Id: " << row.get<std::string>( "Id" ) << std::endl
-                        << "Name: " << row.get<std::string>( "FirstName" ) << " " << row.get<std::string>( "LastName" ) << std::endl
-                        << "ExtraData: " << extra_data << std::endl;
+    //           // dynamic data extraction from each row:
+    //           std::cout << "Id: " << row.get<std::string>( "Id" ) << std::endl
+    //                     << "Name: " << row.get<std::string>( "FirstName" ) << " " << row.get<std::string>( "LastName" ) << std::endl
+    //                     << "ExtraData: " << extra_data << std::endl;
 
-            }
+    //         }
 
-            transaction->commit();
+    //         transaction->commit();
 
-          }
-          catch ( const std::exception &ex ) {
+    //       }
+    //       catch ( const std::exception &ex ) {
 
-            if ( transaction &&
-                 transaction->is_active() ) {
+    //         if ( transaction &&
+    //              transaction->is_active() ) {
 
-              transaction->rollback();
+    //           transaction->rollback();
 
-            }
+    //         }
 
-            std::cout << ex.what() << std::endl;
+    //         std::cout << ex.what() << std::endl;
 
-          }
+    //       }
 
-        }
+    //     }
 
-        if ( store_connection->redis_connection() ) {
+    //     if ( store_connection->redis_connection() ) {
 
-          std::cout << "*** NO SQL = Redis ***" << std::endl;
+    //       std::cout << "*** NO SQL = Redis ***" << std::endl;
 
-          store_connection->redis_connection();
+    //       store_connection->redis_connection();
 
-          auto val = store_connection->redis_connection()->get( "key1" );
+    //       auto val = store_connection->redis_connection()->get( "key1" );
 
-          if ( !val ) {
+    //       if ( !val ) {
 
-            // initialize random seed: /
-            srand( time( nullptr ) );
+    //         // initialize random seed: /
+    //         srand( time( nullptr ) );
 
-            // generate secret number between 1 and 10:
-            int random_value = rand() % 10 + 1;
+    //         // generate secret number between 1 and 10:
+    //         int random_value = rand() % 10 + 1;
 
-            store_connection->redis_connection()->set( "key1", std::to_string( random_value ), std::chrono::seconds( 60 ) );
+    //         store_connection->redis_connection()->set( "key1", std::to_string( random_value ), std::chrono::seconds( 60 ) );
 
-            val = store_connection->redis_connection()->get( "key1" );
+    //         val = store_connection->redis_connection()->get( "key1" );
 
-            std::cout << "Key1 (From Set): " << *val << std::endl;
+    //         std::cout << "Key1 (From Set): " << *val << std::endl;
 
-          }
-          else {
+    //       }
+    //       else {
 
-            // Dereference val to get the returned value of std::string type.
-            std::cout << "Key1 (From Cache): " << *val << std::endl;
+    //         // Dereference val to get the returned value of std::string type.
+    //         std::cout << "Key1 (From Cache): " << *val << std::endl;
 
-          }   // else key doesn't exist.
+    //       }   // else key doesn't exist.
 
 
-        }
+    //     }
 
-        if ( store_connection->mongo_connection() ) {
+    //     if ( store_connection->mongo_connection() ) {
 
-          std::cout << "*** NO SQL = Mongo ***" << std::endl;
+    //       std::cout << "*** NO SQL = Mongo ***" << std::endl;
 
-          bsoncxx::document::value restaurant_doc = bsoncxx::from_json( "{ \"Id\": 1, \"FirstName\": \"Loly Valentina\", \"LastName\": \"Gomez Fermin\" }" );
+    //       bsoncxx::document::value restaurant_doc = bsoncxx::from_json( "{ \"Id\": 1, \"FirstName\": \"Loly Valentina\", \"LastName\": \"Gomez Fermin\" }" );
 
-          // We choose to move in our document here, which transfers ownership to insert_one()
-          auto result = (*store_connection->mongo_connection())[ "sysPerson" ].insert_one( std::move( restaurant_doc ) );
+    //       // We choose to move in our document here, which transfers ownership to insert_one()
+    //       auto result = (*store_connection->mongo_connection())[ "sysPerson" ].insert_one( std::move( restaurant_doc ) );
 
-          if ( result->inserted_id().type() == bsoncxx::type::k_oid ) {
+    //       if ( result->inserted_id().type() == bsoncxx::type::k_oid ) {
 
-            bsoncxx::oid id = result->inserted_id().get_oid().value;
-            std::string id_str = id.to_string();
-            std::cout << "Inserted id: " << id_str << std::endl;
+    //         bsoncxx::oid id = result->inserted_id().get_oid().value;
+    //         std::string id_str = id.to_string();
+    //         std::cout << "Inserted id: " << id_str << std::endl;
 
-          }
-          else {
+    //       }
+    //       else {
 
-            std::cout << "Inserted id was not an OID type" << std::endl;
+    //         std::cout << "Inserted id was not an OID type" << std::endl;
 
-          }
+    //       }
 
-        }
+    //     }
 
-      }
+    //   }
 
-    //}
+    // //}
 
-    Store::StoreConnectionManager::return_leased_store_connection( store_connection );
+    // Store::StoreConnectionManager::return_leased_store_connection( store_connection );
 
-    store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( "sql_01" );
+    // store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( "sql_01" );
 
-    if ( store_connection ) {
+    // if ( store_connection ) {
 
-      std::cout << "Connection index: " << store_connection->index() << std::endl;
+    //   std::cout << "Connection index: " << store_connection->index() << std::endl;
 
-    }
+    // }
 
-    Store::StoreConnectionManager::return_leased_store_connection( store_connection );
+    // Store::StoreConnectionManager::return_leased_store_connection( store_connection );
 
     /*
     // ***** SOCI *****
@@ -733,7 +733,7 @@ int main( int argc, char** argv ) {
 
   // std::cout << "x(string:Hello!!!): " << x << std::endl;
 
-  std::cout << "Running server at 0.0.0.0:8080" << std::endl;
+  std::cout << "Running server at 0.0.0.0:" + std::to_string( port ) + base_path << std::endl;
   std::cout << "Press enter to exit" << std::endl;
   hlogi("Log file is: %s", g_main_ctx.logfile);
 

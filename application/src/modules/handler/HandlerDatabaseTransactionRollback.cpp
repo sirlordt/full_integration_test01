@@ -68,14 +68,12 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                                     "Mark": "76024D77F6DB-",
                                     "Log": null,
                                     "IsError": false,
-                                    "Errors": [],
-                                    "Warnings": [],
+                                    "Errors": {},
+                                    "Warnings": {},
                                     "Count": 1,
-                                    "Data": [
-                                              {
-                                                "TransactionId": ""
-                                              }
-                                            ]
+                                    "Data": {
+                                              "TransactionId": ""
+                                            }
                                   }
                                 )"_json;
 
@@ -85,8 +83,11 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
                 result[ "Data" ][ 0 ][ "TransactionId" ] = transaction_id;
 
+                ctx->response->content_type = APPLICATION_JSON;
+                ctx->response->body = result.dump( 2 );
+
                 //result[ "Message" ] = ex.what();
-                ctx->response->Json( result );
+                //ctx->response->Json( result );
 
               }
               else {
@@ -101,16 +102,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                                     "Mark": "AF06CC241042-",
                                     "Log": null,
                                     "IsError": true,
-                                    "Errors": [
-                                                {
-                                                  "Code": "ERROR_STORE_SQL_TRANSACTION_IS_NOT_ACTIVE",
-                                                  "Message": "The Store SQL Transaction is not active",
-                                                  "Details": null
-                                                }
-                                              ],
-                                    "Warnings": [],
+                                    "Errors": {},
+                                    "Warnings": {},
                                     "Count": 0,
-                                    "Data": []
+                                    "Data": {}
                                   }
                                 )"_json;
 
@@ -118,8 +113,11 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
                 result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+                ctx->response->content_type = APPLICATION_JSON;
+                ctx->response->body = result.dump( 2 );
+
                 //result[ "Message" ] = ex.what();
-                ctx->response->Json( result );
+                //ctx->response->Json( result );
 
               }
 
@@ -136,16 +134,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                                   "Mark": "FD2EF602E1FB-",
                                   "Log": null,
                                   "IsError": true,
-                                  "Errors": [
-                                              {
-                                                "Code": "ERROR_TRANSACTIONID_IS_INVALID",
-                                                "Message": "The transaction id is invalid or not found",
-                                                "Details": null
-                                              }
-                                            ],
-                                  "Warnings": [],
+                                  "Errors": {},
+                                  "Warnings": {},
                                   "Count": 0,
-                                  "Data": []
+                                  "Data": {}
                                 }
                               )"_json;
 
@@ -153,8 +145,11 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
               result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+              ctx->response->content_type = APPLICATION_JSON;
+              ctx->response->body = result.dump( 2 );
+
               //result[ "Message" ] = ex.what();
-              ctx->response->Json( result );
+              //ctx->response->Json( result );
 
             }
 
@@ -167,20 +162,14 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                               {
                                 "StatusCode": 400,
                                 "Code": "ERROR_MISSING_FIELD_TRANSACTIONID",
-                                "Message": "The field TransactionId is required and not empty and not null",
+                                "Message": "The field TransactionId is required and cannot be empty or null",
                                 "Mark": "3D09F3D8C359-",
                                 "Log": null,
                                 "IsError": true,
-                                "Errors": [
-                                            {
-                                              "Code": "ERROR_MISSING_FIELD_TRANSACTIONID",
-                                              "Message": "The field TransactionId is required and not empty and not null",
-                                              "Details": null
-                                            }
-                                          ],
-                                "Warnings": [],
+                                "Errors": {},
+                                "Warnings": {},
                                 "Count": 0,
-                                "Data": []
+                                "Data": {}
                               }
                             )"_json;
 
@@ -188,8 +177,11 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
             result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+            ctx->response->content_type = APPLICATION_JSON;
+            ctx->response->body = result.dump( 2 );
+
             //result[ "Message" ] = ex.what();
-            ctx->response->Json( result );
+            //ctx->response->Json( result );
 
           }
 
@@ -204,16 +196,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                               "Mark": "5FA1400BFAEF-",
                               "Log": null,
                               "IsError": true,
-                              "Errors": [
-                                          {
-                                            "Code": "ERROR_AUTHORIZATION_TOKEN_NOT_VALID",
-                                            "Message": "The authorization token provided is not valid or not found",
-                                            "Details": null
-                                          }
-                                        ],
-                              "Warnings": [],
+                              "Errors": {},
+                              "Warnings": {},
                               "Count": 0,
-                              "Data": []
+                              "Data": {}
                             }
                           )"_json;
 
@@ -232,16 +218,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                               "Mark": "0212000C0442-",
                               "Log": null,
                               "IsError": true,
-                              "Errors": [
-                                          {
-                                            "Code": "ERROR_NOT_ALLOWED_ACCESS_TO_STORE",
-                                            "Message": "Not allowed access to store",
-                                            "Details": null
-                                          }
-                                        ],
-                              "Warnings": [],
+                              "Errors": {},
+                              "Warnings": {},
                               "Count": 0,
-                              "Data": []
+                              "Data": {}
                             }
                           )"_json;
 
@@ -260,20 +240,14 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                           {
                             "StatusCode": 400,
                             "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
-                            "Message": "The field Autorization is required and not empty and not null",
+                            "Message": "The field Autorization is required and cannot be empty or null",
                             "Mark": "B1A4BE329CF6-",
                             "Log": null,
                             "IsError": true,
-                            "Errors": [
-                                        {
-                                          "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
-                                          "Message": "The field Autorization is required and not empty and not null",
-                                          "Details": null
-                                        }
-                                      ],
-                            "Warnings": [],
+                            "Errors": {},
+                            "Warnings": {},
                             "Count": 0,
-                            "Data": []
+                            "Data": {}
                           }
                         )"_json;
 
@@ -281,8 +255,11 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
         result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
+        ctx->response->content_type = APPLICATION_JSON;
+        ctx->response->body = result.dump( 2 );
+
         //result[ "Message" ] = ex.what();
-        ctx->response->Json( result );
+        //ctx->response->Json( result );
 
         //hlogw( "Exception: %s", ex.what() );
 
@@ -301,16 +278,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                           "Mark": "710036C7BFB0-",
                           "Log": null,
                           "IsError": true,
-                          "Errors": [
-                                      {
-                                        "Code": "ERROR_INVALID_JSON_BODY_DATA",
-                                        "Message": "Must be a valid json data format",
-                                        "Details": null
-                                      }
-                                    ],
-                          "Warnings": [],
+                          "Errors": {},
+                          "Warnings": {},
                           "Count": 0,
-                          "Data": []
+                          "Data": {}
                         }
                       )"_json;
 
@@ -321,7 +292,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
       //result[ "Message" ] = ex.what();
       result[ "Errors" ][ 0 ][ "Message" ] = ex.what();
 
-      ctx->response->Json( result );
+      ctx->response->content_type = APPLICATION_JSON;
+      ctx->response->body = result.dump( 2 );
+
+      //ctx->response->Json( result );
 
       hloge( "Exception: %s", ex.what() );
 
@@ -340,16 +314,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                         "Mark": "DD633CCBA53A-",
                         "Log": null,
                         "IsError": true,
-                        "Errors": [
-                                    {
-                                      "Code": "JSON_BODY_FORMAT_REQUIRED",
-                                      "Message": "JSON format is required",
-                                      "Details": null
-                                    }
-                                  ],
-                        "Warnings": [],
+                        "Errors": {},
+                        "Warnings": {},
                         "Count": 0,
-                        "Data": []
+                        "Data": {}
                       }
                     )"_json;
 
@@ -357,7 +325,10 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
     result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
-    ctx->response->Json( result );
+    ctx->response->content_type = APPLICATION_JSON;
+    ctx->response->body = result.dump( 2 );
+
+    //ctx->response->Json( result );
 
   }
 
