@@ -81,11 +81,11 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                 const std::string &transaction_id = execute_block[ "TransactionId" ].is_string() ?
                                                     Common::trim( execute_block[ "TransactionId" ].get<std::string>() ):
                                                     "";
-                const std::string &kind = execute_block[ "TransactionId" ].is_string() ?
+                const std::string &kind = execute_block[ "Kind" ].is_string() ?
                                           Common::trim( execute_block[ "Kind" ].get<std::string>() ):
                                           "";
 
-                nlohmann::json command_list;
+                nlohmann::json command_list {};
 
                 if ( execute_block[ "Command" ].is_array() ) {
 
@@ -247,7 +247,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                         result_error[ "Details" ][ "Store" ] = store;
 
                                         //result[ "Errors" ].push_back( result_error );
-                                        result[ "Errors" ][ execute_id ] = result_error;
+                                        result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
                                       }
 
@@ -274,7 +274,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                       result_error[ "Details" ][ "Message" ] = ex.what();
 
                                       //result[ "Errors" ].push_back( result_error );
-                                      result[ "Errors" ][ execute_id ] = result_error;
+                                      result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
                                     }
 
@@ -301,7 +301,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                         data_list.push_back( hv::Json::parse( "{ \"Kind\": \"" + kind + "\", \"AffectedRows\": " + std::to_string( affected_rows ) + " }" ) );
 
                                         result[ "Count" ] = result[ "Count" ].get<int>() + 1;
-                                        result[ "Data" ][ execute_id ] = data_list;
+                                        result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = data_list;
 
                                       }
                                       else {
@@ -325,7 +325,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                         result_error[ "Details" ][ "Store" ] = store;
 
                                         //result[ "Errors" ].push_back( result_error );
-                                        result[ "Errors" ][ execute_id ] = result_error;
+                                        result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
                                       }
 
@@ -352,7 +352,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
                                       result_error[ "Details" ][ "Message" ] = ex.what();
 
                                       //result[ "Errors" ].push_back( result_error );
-                                      result[ "Errors" ][ execute_id ] = result_error;
+                                      result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
                                     }
 
