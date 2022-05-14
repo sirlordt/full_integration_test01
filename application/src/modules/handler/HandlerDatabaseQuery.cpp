@@ -151,6 +151,9 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
                               try {
 
+                                //Stay sure no other thread use this connection
+                                std::lock_guard<std::mutex> lock_guard( store_connection->mutex() );
+
                                 for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
 
                                   try {
@@ -243,7 +246,7 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
                                         auto data_list = hv::Json::array();
 
-                                        data_list.push_back( hv::Json::parse( "{ \"Kind\": \"" + kind + "\", \"AffectedRows\": " + std::to_string( affected_rows ) + " }" ) );
+                                        data_list.push_back( hv::Json::parse( "{ \"Command\": \"" + sql_command + "\", \"AffectedRows\": " + std::to_string( affected_rows ) + " }" ) );
 
                                         result[ "Count" ] = result[ "Count" ].get<int>() + 1;
                                         result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = data_list;
@@ -403,12 +406,16 @@ int handler_database_query( const HttpContextPtr& ctx ) {
 
                           //Execute mongo query
 
+                          //std::lock_guard<std::mutex> lock_guard( store_connection->mutex() );
+
                           //Execute mongo query
 
                         }
                         else if ( store_connection->redis_connection() ) {
 
                           //Execute redis query
+
+                          //std::lock_guard<std::mutex> lock_guard( store_connection->mutex() );
 
                           //Execute redis query
 
@@ -788,34 +795,15 @@ int handler_database_query( const HttpContextPtr& ctx ) {
       const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
 
       auto result = Common::build_basic_response( status_code,
-                                                  "ERROR_INVALID_JSON_BODY_DATA",
-                                                  "Must be a valid json data format",
+                                                  "ERROR_UNEXPECTED_EXCEPTION",
+                                                  "Unexpected error. Please read the server log for more details.",
                                                   "F9B4CCCCAC92-" + thread_id,
                                                   true,
                                                   "" );
 
-
-      // auto result = R"(
-      //                   {
-      //                     "StatusCode": 500,
-      //                     "Code": "ERROR_INVALID_JSON_BODY_DATA",
-      //                     "Message": "Must be a valid json data format",
-      //                     "Mark": "F9B4CCCCAC92-",
-      //                     "Log": null,
-      //                     "IsError": true,
-      //                     "Errors": {},
-      //                     "Warnings": {},
-      //                     "Count": 0,
-      //                     "Data": {}
-      //                   }
-      //                 )"_json;
-
-      //const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-      //result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
-
-      //result[ "Message" ] = ex.what();
+      result[ "Errors" ][ "Code" ] = "ERROR_INVALID_JSON_BODY_DATA";
       result[ "Errors" ][ "Message" ] = ex.what();
+      result[ "Errors" ][ "Details" ] = {};
 
       ctx->response->content_type = APPLICATION_JSON;
       ctx->response->body = result.dump( 2 );

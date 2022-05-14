@@ -13,6 +13,8 @@
 
 #include "../modules/common/StoreConnectionManager.hpp"
 
+#include "../modules/common/Response.hpp"
+
 #include "Handlers.hpp"
 
 namespace Handlers {
@@ -348,29 +350,20 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
     }
     catch ( const std::exception &ex ) {
 
-      status_code = 400; //Bad request
-
-      auto result = R"(
-                        {
-                          "StatusCode": 400,
-                          "Code": "ERROR_INVALID_JSON_BODY_DATA",
-                          "Message": "Must be a valid json data format",
-                          "Mark": "BA4BF3C5FF90-",
-                          "Log": null,
-                          "IsError": true,
-                          "Errors": {},
-                          "Warnings": {},
-                          "Count": 0,
-                          "Data": {}
-                        }
-                      )"_json;
+      status_code = 500; //Internal server error
 
       const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
 
-      result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+      auto result = Common::build_basic_response( status_code,
+                                                  "ERROR_UNEXPECTED_EXCEPTION",
+                                                  "Unexpected error. Please read the server log for more details.",
+                                                  "D63A1315EB71-" + thread_id,
+                                                  true,
+                                                  "" );
 
-      //result[ "Message" ] = ex.what();
+      result[ "Errors" ][ "Code" ] = "ERROR_INVALID_JSON_BODY_DATA";
       result[ "Errors" ][ "Message" ] = ex.what();
+      result[ "Errors" ][ "Details" ] = {};
 
       ctx->response->content_type = APPLICATION_JSON;
       ctx->response->body = result.dump( 2 );
@@ -378,6 +371,7 @@ int handler_database_transaction_begin( const HttpContextPtr& ctx ) {
       //ctx->response->Json( result );
 
       hloge( "Exception: %s", ex.what() );
+
 
     }
 

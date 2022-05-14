@@ -180,6 +180,12 @@ bool StoreConnection::borrowed() const {
 
 }
 
+std::mutex& StoreConnection::mutex() {
+
+  return mutex_;
+
+}
+
 soci::session* StoreConnection::sql_connection() const {
 
   return sql_connection_;

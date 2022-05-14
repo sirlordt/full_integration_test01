@@ -84,6 +84,7 @@ public:
   const std::string& password() const;
   u_int8_t pool() const;
   bool borrowed() const;
+  std::mutex& mutex();
 
 private:
 
@@ -97,6 +98,8 @@ private:
   std::string password_{ "" };
   uint8_t pool_ { 0 };
   bool borrowed_ { false };
+
+  std::mutex mutex_ {};
 
   soci::session *sql_connection_ { nullptr };
   sw::redis::Redis *redis_connection_ { nullptr };

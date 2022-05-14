@@ -13,6 +13,8 @@
 
 #include "../modules/common/StoreConnectionManager.hpp"
 
+#include "../modules/common/Response.hpp"
+
 #include "Handlers.hpp"
 
 namespace Handlers {
@@ -48,15 +50,41 @@ int handler_database_transaction_commit( const HttpContextPtr& ctx ) {
 
               if ( store_sql_connection_in_transaction->is_active() ) {
 
-                store_sql_connection_in_transaction->commit();
-
                 auto store_connection = Store::StoreConnectionManager::store_connection_by_id( transaction_id );
 
-                Store::StoreConnectionManager::return_leased_store_connection( store_connection );
+                try {
 
-                Store::StoreConnectionManager::unregister_transaction_by_id( transaction_id );
+                  if ( store_connection ) {
 
-                Store::StoreConnectionManager::unregister_store_connection_by_id( transaction_id );
+                    //Stay sure no other thread use this connection
+                    store_connection->mutex().lock();
+
+                  }
+
+                  store_sql_connection_in_transaction->commit();
+
+                  Store::StoreConnectionManager::unregister_transaction_by_id( transaction_id );
+
+                  Store::StoreConnectionManager::unregister_store_connection_by_id( transaction_id );
+
+                  if ( store_connection ) {
+
+                    Store::StoreConnectionManager::return_leased_store_connection( store_connection );
+
+                    store_connection->mutex().unlock(); //Release the lock
+
+                  }
+
+                }
+                catch ( ... ) {
+
+                  if ( store_connection ) {
+
+                    store_connection->mutex().unlock(); //Release the lock
+
+                  }
+
+                }
 
                 status_code = 200; //Ok
 
@@ -268,29 +296,20 @@ int handler_database_transaction_commit( const HttpContextPtr& ctx ) {
     }
     catch ( const std::exception &ex ) {
 
-      status_code = 400; //Bad request
-
-      auto result = R"(
-                        {
-                          "StatusCode": 400,
-                          "Code": "ERROR_INVALID_JSON_BODY_DATA",
-                          "Message": "Must be a valid json data format",
-                          "Mark": "A66693F32727-",
-                          "Log": null,
-                          "IsError": true,
-                          "Errors": {},
-                          "Warnings": {},
-                          "Count": 0,
-                          "Data": {}
-                        }
-                      )"_json;
+      status_code = 500; //Internal server error
 
       const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
 
-      result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+      auto result = Common::build_basic_response( status_code,
+                                                  "ERROR_UNEXPECTED_EXCEPTION",
+                                                  "Unexpected error. Please read the server log for more details.",
+                                                  "CF8DF1BD6DB7-" + thread_id,
+                                                  true,
+                                                  "" );
 
-      //result[ "Message" ] = ex.what();
-      result[ "Errors" ][ 0 ][ "Message" ] = ex.what();
+      result[ "Errors" ][ "Code" ] = "ERROR_INVALID_JSON_BODY_DATA";
+      result[ "Errors" ][ "Message" ] = ex.what();
+      result[ "Errors" ][ "Details" ] = {};
 
       ctx->response->content_type = APPLICATION_JSON;
       ctx->response->body = result.dump( 2 );
