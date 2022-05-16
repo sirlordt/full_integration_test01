@@ -192,9 +192,9 @@ int main( int argc, char** argv ) {
 
   }
 
-  end_point << "system/database/transaction/begin";
+  end_point << "system/store/transaction/begin";
 
-  router.POST( end_point.str().c_str(), Handlers::handler_database_transaction_begin );
+  router.POST( end_point.str().c_str(), Handlers::handler_store_transaction_begin );
 
   // end_point.seekp( 0 );
   // end_point.seekg( 0 );
@@ -216,11 +216,11 @@ int main( int argc, char** argv ) {
 
   }
 
-  end_point << "system/database/transaction/commit";
+  end_point << "system/store/transaction/commit";
 
   //std::cout << end_point.str() << std::endl;
 
-  router.POST( end_point.str().c_str(), Handlers::handler_database_transaction_commit );
+  router.POST( end_point.str().c_str(), Handlers::handler_store_transaction_commit );
 
   //end_point.clear();
 
@@ -239,9 +239,9 @@ int main( int argc, char** argv ) {
 
   }
 
-  end_point << "system/database/transaction/rollback";
+  end_point << "system/store/transaction/rollback";
 
-  router.POST( end_point.str().c_str(), Handlers::handler_database_transaction_rollback );
+  router.POST( end_point.str().c_str(), Handlers::handler_store_transaction_rollback );
 
   //end_point.clear();
 
@@ -260,10 +260,9 @@ int main( int argc, char** argv ) {
 
   }
 
-  end_point << "system/database/query";
+  end_point << "system/store/query";
 
-  router.POST( end_point.str().c_str(), Handlers::handler_database_query );
-
+  router.POST( end_point.str().c_str(), Handlers::handler_store_query );
 
   router.GET( "/ping", []( HttpRequest* req, HttpResponse* resp ) {
 
@@ -646,79 +645,83 @@ int main( int argc, char** argv ) {
 
     }
     // ***** REDIS *****
-
-    // ***** MONGODB *****
-    try {
-
-      //mongocxx::instance inst{};
-      mongocxx::client conn{ mongocxx::uri{ "mongodb://localhost:27017" } };
-
-      mongocxx::v_noabi::database db = conn[ "TestDB" ];
-
-      using bsoncxx::builder::basic::kvp;
-      using bsoncxx::builder::basic::make_array;
-      using bsoncxx::builder::basic::make_document;
-
-      // bsoncxx::document::value restaurant_doc = make_document(
-      //     kvp("address",
-      //         make_document(kvp("street", "2 Avenue"),
-      //                       kvp("zipcode", 10075),
-      //                       kvp("building", "1480"),
-      //                       kvp("coord", make_array(-73.9557413, 40.7720266)))),
-      //     kvp("borough", "Manhattan"),
-      //     kvp("cuisine", "Italian"),
-      //     kvp("grades",
-      //         make_array(
-      //             make_document(kvp("date", bsoncxx::types::b_date{std::chrono::milliseconds{12323}}),
-      //                           kvp("grade", "A"),
-      //                           kvp("score", 11)),
-      //             make_document(
-      //                 kvp("date", bsoncxx::types::b_date{std::chrono::milliseconds{121212}}),
-      //                 kvp("grade", "B"),
-      //                 kvp("score", 17)))),
-      //     kvp("name", "Vella"),
-      //     kvp("restaurant_id", "41704620"));
-
-      //https://github.com/mongodb/mongo-cxx-driver/blob/master/examples/mongocxx/query.cpp
-      //https://stackoverflow.com/questions/3305561/how-to-query-mongodb-with-like
-      std::cout << bsoncxx::to_json( make_document(kvp("grade.score", make_document( kvp( "$gt", 30 ) ) ) ) ) << std::endl;
-
-      bsoncxx::document::value restaurant_doc = bsoncxx::from_json( "{ \"id\": 1, \"first_name\": \"Loly Valentina\", \"last_name\": \"Gomez Fermin\" }" );
-
-      // We choose to move in our document here, which transfers ownership to insert_one()
-      auto result = db[ "restaurants" ].insert_one( std::move( restaurant_doc ) );
-
-      if ( result->inserted_id().type() == bsoncxx::type::k_oid ) {
-
-        bsoncxx::oid id = result->inserted_id().get_oid().value;
-        std::string id_str = id.to_string();
-        std::cout << "Inserted id: " << id_str << std::endl;
-
-      }
-      else {
-
-        std::cout << "Inserted id was not an OID type" << std::endl;
-
-      }
-
-      //auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$eq\": \"Tomas\" } }" ) );
-      //Contains
-      auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$regex\": \"Rafael$\", \"$options\" : \"i\" } }" ) );
-
-      for (auto&& doc : cursor) {
-
-        std::cout << bsoncxx::to_json( doc ) << std::endl;
-
-      }
-
-    }
-    catch ( const std::exception &ex ) {
-
-      std::cout << ex.what() << std::endl;
-
-    }
-    // ***** MONGODB *****
     */
+
+    // ***** MONGODB *****
+    // try {
+
+    //   //mongocxx::instance inst{};
+    //   mongocxx::client conn{ mongocxx::uri{ "mongodb://localhost:27017" } };
+
+    //   mongocxx::v_noabi::database db = conn[ "TestDB" ];
+
+    //   using bsoncxx::builder::basic::kvp;
+    //   using bsoncxx::builder::basic::make_array;
+    //   using bsoncxx::builder::basic::make_document;
+
+    //   // bsoncxx::document::value restaurant_doc = make_document(
+    //   //     kvp("address",
+    //   //         make_document(kvp("street", "2 Avenue"),
+    //   //                       kvp("zipcode", 10075),
+    //   //                       kvp("building", "1480"),
+    //   //                       kvp("coord", make_array(-73.9557413, 40.7720266)))),
+    //   //     kvp("borough", "Manhattan"),
+    //   //     kvp("cuisine", "Italian"),
+    //   //     kvp("grades",
+    //   //         make_array(
+    //   //             make_document(kvp("date", bsoncxx::types::b_date{std::chrono::milliseconds{12323}}),
+    //   //                           kvp("grade", "A"),
+    //   //                           kvp("score", 11)),
+    //   //             make_document(
+    //   //                 kvp("date", bsoncxx::types::b_date{std::chrono::milliseconds{121212}}),
+    //   //                 kvp("grade", "B"),
+    //   //                 kvp("score", 17)))),
+    //   //     kvp("name", "Vella"),
+    //   //     kvp("restaurant_id", "41704620"));
+
+    //   //https://github.com/mongodb/mongo-cxx-driver/blob/master/examples/mongocxx/query.cpp
+    //   //https://stackoverflow.com/questions/3305561/how-to-query-mongodb-with-like
+    //   std::cout << bsoncxx::to_json( make_document(kvp("grade.score", make_document( kvp( "$gt", 30 ) ) ) ) ) << std::endl;
+
+    //   bsoncxx::document::value restaurant_doc = bsoncxx::from_json( "{ \"id\": 1, \"first_name\": \"Loly Valentina\", \"last_name\": \"Gomez Fermin\" }" );
+
+    //   // We choose to move in our document here, which transfers ownership to insert_one()
+    //   auto result = db[ "restaurants" ].insert_one( std::move( restaurant_doc ) );
+
+    //   if ( result->inserted_id().type() == bsoncxx::type::k_oid ) {
+
+    //     bsoncxx::oid id = result->inserted_id().get_oid().value;
+    //     std::string id_str = id.to_string();
+    //     std::cout << "Inserted id: " << id_str << std::endl;
+
+    //   }
+    //   else {
+
+    //     std::cout << "Inserted id was not an OID type" << std::endl;
+
+    //   }
+
+    //   //auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$eq\": \"Tomas\" } }" ) );
+    //   //Contains
+    //   auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$regex\": \"Rafael$\", \"$options\" : \"i\" } }" ) ); Like 'Rafael%'
+    //   auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$regex\": \"^Rafael\", \"$options\" : \"i\" } }" ) ); Like '%Rafael'
+    //   auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$regex\": \"Rafael\", \"$options\" : \"i\" } }" ) ); Like '%Rafael%'
+    //   auto cursor = db["restaurants"].find( bsoncxx::from_json( "{ \"first_name\": { \"$regex\": \"Tom[aá]s\", \"$options\" : \"i\" } }" ) ); Like '%Tomás%' Like '%Tomas%'
+
+    //   for (auto&& doc : cursor) {
+
+    //     std::cout << bsoncxx::to_json( doc ) << std::endl;
+
+    //   }
+
+    // }
+    // catch ( const std::exception &ex ) {
+
+    //   std::cout << ex.what() << std::endl;
+
+    // }
+    // ***** MONGODB *****
+    /**/
 
   //}
   // std::any any_value = 10;

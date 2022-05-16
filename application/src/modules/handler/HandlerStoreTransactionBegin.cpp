@@ -19,7 +19,7 @@
 
 namespace Handlers {
 
-int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
+int handler_store_transaction_begin( const HttpContextPtr& ctx ) {
 
   auto type = ctx->type();
 
@@ -31,69 +31,153 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
       auto json_body = hv::Json::parse( ctx->body() );
 
+      //std::cout << json_body.dump( 2 ) << std::endl;
+
       if ( json_body[ "Autorization" ].is_null() == false &&
            Common::trim( json_body[ "Autorization" ] ) != "" ) {
 
-        status_code = Handlers::check_token_is_valid_and_authorized( Common::trim( json_body[ "Autorization" ] ) );
+        status_code = check_token_is_valid_and_authorized( Common::trim( json_body[ "Autorization" ] ) );
 
         //check the token
         if ( status_code = 200 ) {
 
-          if ( json_body[ "TransactionId" ].is_null() == false &&
-               Common::trim( json_body[ "TransactionId" ] ) != "" ) {
+          if ( json_body[ "Store" ].is_null() == false &&
+               Common::trim( json_body[ "Store" ] ) != "" ) {
 
-            const std::string &transaction_id = json_body[ "TransactionId" ].get<std::string>();
+            UUIDv4::UUIDGenerator<std::mt19937_64> uuidGenerator;
 
-            auto store_sql_connection_in_transaction = Store::StoreConnectionManager::transaction_by_id( transaction_id );
+            const std::string &autorization = json_body[ "Autorization" ];
+            const std::string &store = json_body[ "Store" ];
+            const std::string &transaction_id = json_body[ "TransactionId" ].is_null() == false && Common::trim( json_body[ "TransactionId" ] ) != "" ?
+                                                json_body[ "TransactionId" ].get<std::string>():
+                                                uuidGenerator.getUUID().str();
 
-            if ( store_sql_connection_in_transaction != nullptr ) {
+            if ( Store::StoreConnectionManager::store_connection_name_exists( store ) ) {
 
-              if ( store_sql_connection_in_transaction->is_active() ) {
+              auto store_sql_connection_in_transaction = Store::StoreConnectionManager::transaction_by_id( transaction_id );
 
-                auto store_connection = Store::StoreConnectionManager::store_connection_by_id( transaction_id );
+              if ( store_sql_connection_in_transaction == nullptr ) {
 
-                try {
+                auto store_connection = Store::StoreConnectionManager::lease_store_connection_by_name( store );
 
-                  if ( store_connection ) {
+                if ( store_connection ) {
 
-                    //Stay sure no other thread use this connection
-                    store_connection->mutex().lock();
+                  if ( store_connection->sql_connection() ) {
+
+                    store_sql_connection_in_transaction = store_connection->sql_connection()->begin(); //transaction begin
+
+                    Store::StoreConnectionManager::register_transaction_to_id( transaction_id,
+                                                                               store_sql_connection_in_transaction );
+
+                    Store::StoreConnectionManager::register_store_connection_to_id( transaction_id,
+                                                                                    store_connection );
+
+                    status_code = 200; //Ok
+
+                    auto result = R"(
+                                      {
+                                        "StatusCode": 200,
+                                        "Code": "SUCCESS_STORE_SQL_TRANSACTION_BEGIN",
+                                        "Message": "Success Store SQL Transaction begin",
+                                        "Mark": "1D0EA78D055E-",
+                                        "Log": null,
+                                        "IsError": false,
+                                        "Errors": {},
+                                        "Warnings": {},
+                                        "Count": 1,
+                                        "Data": {
+                                                  "TransactionId": ""
+                                                }
+                                      }
+                                    )"_json;
+
+                    const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
+
+                    result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+
+                    result[ "Data" ][ "TransactionId" ] = transaction_id;
+
+                    ctx->response->content_type = APPLICATION_JSON;
+                    ctx->response->body = result.dump( 2 );
+
+                    //result[ "Message" ] = ex.what();
+                    //ctx->response->Json( result );
 
                   }
+                  else {
 
-                  store_sql_connection_in_transaction->rollback();
+                    status_code = 400; //Bad request
 
-                  Store::StoreConnectionManager::unregister_transaction_by_id( transaction_id );
+                    auto result = R"(
+                                      {
+                                        "StatusCode": 400,
+                                        "Code": "ERROR_STORE_CONNECTION_IS_NOT_SQL_KIND",
+                                        "Message": "The Store connection is not SQL kind",
+                                        "Mark": "87A015B5FB0A-",
+                                        "Log": null,
+                                        "IsError": true,
+                                        "Errors": {},
+                                        "Warnings": {},
+                                        "Count": 0,
+                                        "Data": {}
+                                      }
+                                    )"_json;
 
-                  Store::StoreConnectionManager::unregister_store_connection_by_id( transaction_id );
+                    const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
 
-                  if ( store_connection ) {
+                    result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
-                    Store::StoreConnectionManager::return_leased_store_connection( store_connection );
+                    ctx->response->content_type = APPLICATION_JSON;
+                    ctx->response->body = result.dump( 2 );
 
-                    store_connection->mutex().unlock(); //Release the lock
+                    //result[ "Message" ] = ex.what();
+                    //ctx->response->Json( result );
 
                   }
 
                 }
-                catch ( ... ) {
+                else {
 
-                  if ( store_connection ) {
+                  status_code = 400; //Bad request
 
-                    store_connection->mutex().unlock(); //Release the lock
+                  auto result = R"(
+                                    {
+                                      "StatusCode": 400,
+                                      "Code": "ERROR_NO_STORE_CONNECTION_AVAILABLE_IN_POOL",
+                                      "Message": "No more Store connection available in pool to begin transaction",
+                                      "Mark": "AE7EDEF5C086-",
+                                      "Log": null,
+                                      "IsError": true,
+                                      "Errors": {},
+                                      "Warnings": {},
+                                      "Count": 0,
+                                      "Data": {}
+                                    }
+                                  )"_json;
 
-                  }
+                  const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
+
+                  result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+
+                  ctx->response->content_type = APPLICATION_JSON;
+                  ctx->response->body = result.dump( 2 );
+
+                  //result[ "Message" ] = ex.what();
+                  //ctx->response->Json( result );
 
                 }
+
+              }
+              else {
 
                 status_code = 200; //Ok
 
                 auto result = R"(
                                   {
                                     "StatusCode": 200,
-                                    "Code": "SUCCESS_STORE_SQL_TRANSACTION_ROLLBACK",
-                                    "Message": "Success rollback Store SQL Transaction",
-                                    "Mark": "76024D77F6DB-",
+                                    "Code": "SUCCESS_STORE_SQL_TRANSACTION_ALREADY_BEGUN",
+                                    "Message": "The Store SQL Transaction already begun",
+                                    "Mark": "62346B62C268-",
                                     "Log": null,
                                     "IsError": false,
                                     "Errors": {},
@@ -109,45 +193,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
                 result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
 
-                result[ "Data" ][ 0 ][ "TransactionId" ] = transaction_id;
-
-                if ( store_connection == nullptr ) {
-
-                  result[ "Warnings" ][ "Code" ] = "WARNING_STORE_CONECTION_FROM_TRANSACTION_ID_NOT_FOUND";
-                  result[ "Warnings" ][ "Message" ] = "Warning the store connection from transaction id not found";
-                  result[ "Warnings" ][ "Details" ] = {};
-
-                }
-
-                ctx->response->content_type = APPLICATION_JSON;
-                ctx->response->body = result.dump( 2 );
-
-                //result[ "Message" ] = ex.what();
-                //ctx->response->Json( result );
-
-              }
-              else {
-
-                status_code = 400; //Bad request
-
-                auto result = R"(
-                                  {
-                                    "StatusCode": 400,
-                                    "Code": "ERROR_STORE_SQL_TRANSACTION_IS_NOT_ACTIVE",
-                                    "Message": "The Store SQL Transaction is not active",
-                                    "Mark": "AF06CC241042-",
-                                    "Log": null,
-                                    "IsError": true,
-                                    "Errors": {},
-                                    "Warnings": {},
-                                    "Count": 0,
-                                    "Data": {}
-                                  }
-                                )"_json;
-
-                const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-                result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+                result[ "Data" ][ "TransactionId" ] = transaction_id;
 
                 ctx->response->content_type = APPLICATION_JSON;
                 ctx->response->body = result.dump( 2 );
@@ -165,9 +211,9 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
               auto result = R"(
                                 {
                                   "StatusCode": 400,
-                                  "Code": "ERROR_TRANSACTIONID_IS_INVALID",
-                                  "Message": "The transaction id is invalid or not found",
-                                  "Mark": "FD2EF602E1FB-",
+                                  "Code": "ERROR_STORE_NAME_NOT_FOUND",
+                                  "Message": "The Store name not found",
+                                  "Mark": "4E31F33D4145-",
                                   "Log": null,
                                   "IsError": true,
                                   "Errors": {},
@@ -197,9 +243,9 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
             auto result = R"(
                               {
                                 "StatusCode": 400,
-                                "Code": "ERROR_MISSING_FIELD_TRANSACTIONID",
-                                "Message": "The field TransactionId is required and cannot be empty or null",
-                                "Mark": "3D09F3D8C359-",
+                                "Code": "ERROR_MISSING_FIELD_STORE",
+                                "Message": "The field Store is required and cannot be empty or null",
+                                "Mark": "BA4BF3C5FF90-",
                                 "Log": null,
                                 "IsError": true,
                                 "Errors": {},
@@ -229,7 +275,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                               "StatusCode": 401,
                               "Code": "ERROR_AUTHORIZATION_TOKEN_NOT_VALID",
                               "Message": "The authorization token provided is not valid or not found",
-                              "Mark": "5FA1400BFAEF-",
+                              "Mark": "3501F233B5AB-",
                               "Log": null,
                               "IsError": true,
                               "Errors": {},
@@ -251,7 +297,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                               "StatusCode": 403,
                               "Code": "ERROR_NOT_ALLOWED_ACCESS_TO_STORE",
                               "Message": "Not allowed access to store",
-                              "Mark": "0212000C0442-",
+                              "Mark": "D00B72B67A38-",
                               "Log": null,
                               "IsError": true,
                               "Errors": {},
@@ -277,7 +323,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                             "StatusCode": 400,
                             "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
                             "Message": "The field Autorization is required and cannot be empty or null",
-                            "Mark": "B1A4BE329CF6-",
+                            "Mark": "BA4BF3C5FF90-",
                             "Log": null,
                             "IsError": true,
                             "Errors": {},
@@ -311,7 +357,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
       auto result = Common::build_basic_response( status_code,
                                                   "ERROR_UNEXPECTED_EXCEPTION",
                                                   "Unexpected error. Please read the server log for more details.",
-                                                  "64F8D1C61626-" + thread_id,
+                                                  "D63A1315EB71-" + thread_id,
                                                   true,
                                                   "" );
 
@@ -326,6 +372,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
 
       hloge( "Exception: %s", ex.what() );
 
+
     }
 
   }
@@ -338,7 +385,7 @@ int handler_database_transaction_rollback( const HttpContextPtr& ctx ) {
                         "StatusCode": 400,
                         "Code": "JSON_BODY_FORMAT_REQUIRED",
                         "Message": "JSON format is required",
-                        "Mark": "DD633CCBA53A-",
+                        "Mark": "5AA705EE0690-",
                         "Log": null,
                         "IsError": true,
                         "Errors": {},

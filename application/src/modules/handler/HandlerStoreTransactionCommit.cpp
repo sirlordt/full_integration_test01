@@ -19,7 +19,7 @@
 
 namespace Handlers {
 
-int handler_database_transaction_commit( const HttpContextPtr& ctx ) {
+int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
   auto type = ctx->type();
 
