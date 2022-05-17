@@ -1,6 +1,8 @@
 #include <string>
+#include <array>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/regex.hpp>
 
 #include <hv/hlog.h>
 #include <hv/HttpServer.h>
@@ -10,6 +12,10 @@
 #include <hv/hasync.h>     // import hv::async
 #include <hv/requests.h>   // import requests::async
 #include <hv/hdef.h>
+
+#include <sw/redis++/redis++.h>
+#include <sw/redis++/reply.h>
+#include <sw/redis++/command_args.h>
 
 #include "../modules/common/Common.hpp"
 
@@ -429,8 +435,6 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                       }
                       else if ( store_connection->mongo_connection() ) {
 
-                        //Execute mongo query
-
                         try {
 
                           //Stay sure no other thread use this connection
@@ -450,11 +454,11 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
                                 if ( command_kind == "select" ) {
 
-                                  std::istringstream ss { command };
+                                  std::istringstream ss { command }; //"Select * From sysPerson Where { \"FirstName\": { \"$regex\": \"^Tom[aá]s\", \"$options\" : \"i\" } }"
 
-                                  std::string select, asterik, from, table, json_document;
+                                  std::string select, asterik, from, table, where, json_document;
 
-                                  ss >> select >> asterik >> from >> table; // >> json_document;
+                                  ss >> select >> asterik >> from >> table >> where; // >> json_document;
 
                                   std::size_t begin_json = command.find( " {", 0 );
 
@@ -636,7 +640,7 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                               result_error[ "Details" ][ "Message" ] = ex.what();
 
                               //result[ "Errors" ].push_back( result_error );
-                              result[ "Errors" ][ execute_id ] = result_error;
+                              result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
                               if ( is_store_connection_local_transaction  ) {
 
@@ -686,11 +690,193 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                       }
                       else if ( store_connection->redis_connection() ) {
 
-                        //Execute redis query
+                        try {
 
-                        //std::lock_guard<std::mutex> lock_guard( store_connection->mutex() );
+                          //Stay sure no other thread use this connection
+                          std::lock_guard<std::mutex> lock_guard( store_connection->mutex() );
 
-                        //Execute redis query
+                          //std::cout << command_list.size();
+
+                          for ( auto command_index = 0; command_index < command_list.size(); command_index++ ) {
+
+                            try {
+
+                              const std::string& command = Common::trim( command_list[ command_index ] );
+
+                              if ( command != "" ) {
+
+                                std::vector<std::string> command_args;  //{ "SET", "KEY", "{ \"key_01\": \"value_01\", \"key_02\": \"value_02\" }" };
+
+                                //boost::algorithm::split( command_args, command, boost::is_any_of( ", " ) ); //boost::is_any_of( ", " )
+
+                                boost::algorithm::split_regex( command_args, command, boost::regex( "__ " ) ) ;
+
+                                // for ( std::string element: command_args ) {
+
+                                //   std::cout << element << std::endl;
+
+                                // }
+
+                                auto result_value = store_connection->redis_connection()->command( command_args.begin(), command_args.end() ); //, command_args.end() );
+
+                                if ( result_value ) {
+
+                                  if ( sw::redis::reply::is_string( *result_value ) ||
+                                       sw::redis::reply::is_status( *result_value ) ) {
+
+                                    std::string s_result = sw::redis::reply::parse<std::string>( *result_value );
+
+                                    hv::Json json_result;
+
+                                    if ( s_result[ 0 ] == '{' ) {
+
+                                      //Possible json
+                                      try {
+
+                                        json_result = hv::Json::parse(s_result );
+
+                                        result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = json_result;
+
+                                      }
+                                      catch ( std::exception &ex ) {
+
+                                        result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = s_result;
+
+                                      }
+
+                                    }
+                                    else {
+
+                                      result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = s_result;
+
+                                    }
+
+                                  }
+                                  else if ( sw::redis::reply::is_integer( *result_value ) ) {
+
+                                    long long ll_result = sw::redis::reply::parse<long long>( *result_value );
+
+                                    result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = ll_result;
+
+                                  }
+                                  else if ( sw::redis::reply::is_array( *result_value ) ) {
+
+                                    std::vector<std::string> v_result = sw::redis::reply::parse<std::vector<std::string>>( *result_value );
+
+                                    result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = v_result;
+
+                                  }
+                                  else if ( sw::redis::reply::is_nil( *result_value ) ) {
+
+                                    result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = "";
+
+                                  }
+
+                                  result[ "Count" ] = result[ "Count" ].get<int>() + 1;
+
+                                }
+                                else {
+
+                                  result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = "<NULL_RESPONSE_FROM_REDIS>";
+                                  result[ "Count" ] = result[ "Count" ].get<int>() + 1;
+
+                                }
+
+                              }
+                              else {
+
+                                auto result_error = R"(
+                                                        {
+                                                          "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                          "Message": "The command cannot be empty",
+                                                          "Mark": "F5AC6481283D-",
+                                                          "Details": {
+                                                                       "Id": "",
+                                                                       "Store": "",
+                                                                       "Message": ""
+                                                                     }
+                                                        }
+                                                      )"_json;
+
+                                result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                                result_error[ "Details" ][ "Id" ] = execute_id + "_" + std::to_string( command_index );
+                                result_error[ "Details" ][ "Store" ] = store;
+
+                                //result[ "Errors" ].push_back( result_error );
+                                result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
+
+                              }
+
+                            }
+                            catch ( const std::exception &ex ) {
+
+                              auto result_error = R"(
+                                                      {
+                                                        "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                        "Message": "Unexpected error to execute command",
+                                                        "Mark": "7973862D0898-",
+                                                        "Details": {
+                                                                     "Id": "",
+                                                                     "Store": "",
+                                                                     "Message": ""
+                                                                   }
+                                                      }
+                                                    )"_json;
+
+                              result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                              result_error[ "Details" ][ "Id" ] = execute_id;
+                              result_error[ "Details" ][ "Store" ] = store;
+                              result_error[ "Details" ][ "Message" ] = ex.what();
+
+                              //result[ "Errors" ].push_back( result_error );
+                              result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
+
+                              if ( is_store_connection_local_transaction  ) {
+
+                                store_sql_connection_in_transaction->rollback(); //Rollback the transaction
+
+                              }
+
+                            }
+
+                            execute_list_size += 1;
+
+                          }
+
+                        }
+                        catch ( const std::exception &ex ) {
+
+                          auto result_error = R"(
+                                                  {
+                                                    "Code": "ERROR_TO_EXECUTE_COMMAND",
+                                                    "Message": "Unexpected error to execute command",
+                                                    "Mark": "44E423104FB2-",
+                                                    "Details": {
+                                                                 "Id": "",
+                                                                 "Store": "",
+                                                                 "Message": ""
+                                                               }
+                                                  }
+                                                )"_json;
+
+                          result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
+
+                          result_error[ "Details" ][ "Id" ] = execute_id;
+                          result_error[ "Details" ][ "Store" ] = store;
+                          result_error[ "Details" ][ "Message" ] = ex.what();
+
+                          //result[ "Errors" ].push_back( result_error );
+                          result[ "Errors" ][ execute_id ] = result_error;
+
+                          if ( is_store_connection_local_transaction  ) {
+
+                            store_sql_connection_in_transaction->rollback(); //Rollback the transaction
+
+                          }
+
+                        }
 
                       }
 
@@ -707,7 +893,7 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                                               {
                                                 "Code": "ERROR_NO_STORE_CONNECTION_AVAILABLE_IN_POOL",
                                                 "Message": "No more Store connection available in pool to begin transaction",
-                                                "Mark": "FE68C4A587DD-",
+                                                "Mark": "F6A706854C0F-",
                                                 "Details": {
                                                              "Id": "",
                                                              "Store": ""
@@ -730,7 +916,7 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                                               {
                                                 "Code": "ERROR_TRANSACTIONID_IS_INVALID",
                                                 "Message": "The transaction id is invalid or not found",
-                                                "Mark": "6240DC032C30-",
+                                                "Mark": "E9D6B6A0411C-",
                                                 "Details": {
                                                              "Id": "",
                                                              "Store": "",
@@ -755,7 +941,7 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                                               {
                                                 "Code": "ERROR_STORE_CONNECTION_NOT_FOUND",
                                                 "Message": "Store connection not found",
-                                                "Mark": "10D7992371E1-",
+                                                "Mark": "FE8CDA468AF2-",
                                                 "Details": {
                                                              "Id": "",
                                                              "Store": ""
@@ -773,56 +959,6 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
                     }
 
-                    // }
-                    // else if ( kind == "" ) {
-
-                    //   auto result_error = R"(
-                    //                           {
-                    //                             "Code": "ERROR_MISSING_FIELD_KIND",
-                    //                             "Message": "The field Kind is required and cannot be empty or null",
-                    //                             "Mark": "3C1B1AE8B821-",
-                    //                             "Details": {
-                    //                                          "Id": "",
-                    //                                          "Store": "",
-                    //                                          "ValidKindAre": [ "insert", "delete", "update", "query" ]
-                    //                                        }
-                    //                           }
-                    //                         )"_json;
-
-                    //   result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
-
-                    //   result_error[ "Details" ][ "Id" ] = execute_id;
-                    //   result_error[ "Details" ][ "Store" ] = store;
-
-                    //   //result[ "Errors" ].push_back( result_error );
-                    //   result[ "Errors" ][ execute_id ] = result_error;
-
-                    // }
-                    // else {
-
-                    //   auto result_error = R"(
-                    //                           {
-                    //                             "Code": "ERROR_EXECUTE_KIND_NOT_VALID",
-                    //                             "Message": "The execute block kind is not valid",
-                    //                             "Mark": "FA2D3EBDB316-",
-                    //                             "Details": {
-                    //                                          "Id": "",
-                    //                                          "Store": "",
-                    //                                          "ValidKindAre": [ "insert", "delete", "update", "query" ]
-                    //                                        }
-                    //                           }
-                    //                         )"_json;
-
-                    //   result_error[ "Mark" ] = result_error[ "Mark" ].get<std::string>() + thread_id;
-
-                    //   result_error[ "Details" ][ "Id" ] = execute_id;
-                    //   result_error[ "Details" ][ "Store" ] = store;
-
-                    //   //result[ "Errors" ].push_back( result_error );
-                    //   result[ "Errors" ][ execute_id ] = result_error;
-
-                    // }
-
                   }
                   else {
 
@@ -830,7 +966,7 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                                             {
                                               "Code": "ERROR_MISSING_FIELD_COMMAND",
                                               "Message": "The field Command is required as array of strings and cannot be empty or null",
-                                              "Mark": "C4492DAB7BC8-",
+                                              "Mark": "F093E072566F-",
                                               "Details": {
                                                            "Id": "",
                                                            "Store": ""
@@ -953,25 +1089,6 @@ int handler_store_query( const HttpContextPtr& ctx ) {
             ctx->response->content_type = APPLICATION_JSON;
             ctx->response->body = result.dump( 2 );
 
-            // auto result = R"(
-            //                   {
-            //                     "StatusCode": 400,
-            //                     "Code": "ERROR_MISSING_FIELD_EXECUTE",
-            //                     "Message": "The field Execute is required as array of strings and cannot be empty or null",
-            //                     "Mark": "FEE80B366130-",
-            //                     "Log": null,
-            //                     "IsError": true,
-            //                     "Errors": {},
-            //                     "Warnings": {},
-            //                     "Count": 0,
-            //                     "Data": {}
-            //                   }
-            //                 )"_json;
-
-            //result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
-
-            //ctx->response->Json( result );
-
           }
 
         }
@@ -1037,27 +1154,6 @@ int handler_store_query( const HttpContextPtr& ctx ) {
         ctx->response->content_type = APPLICATION_JSON;
         ctx->response->body = result.dump( 2 );
 
-        // auto result = R"(
-        //                   {
-        //                     "StatusCode": 400,
-        //                     "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
-        //                     "Message": "The field Autorization is required and cannot be empty or null",
-        //                     "Mark": "E97A1FD111E8-",
-        //                     "Log": null,
-        //                     "IsError": true,
-        //                     "Errors": {},
-        //                     "Warnings": {},
-        //                     "Count": 0,
-        //                     "Data": {}
-        //                   }
-        //                 )"_json;
-
-        //const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-        //result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
-
-        //ctx->response->Json( result );
-
       }
 
     }
@@ -1103,27 +1199,6 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
     ctx->response->content_type = APPLICATION_JSON;
     ctx->response->body = result.dump( 2 );
-
-    // auto result = R"(
-    //                   {
-    //                     "StatusCode": 400,
-    //                     "Code": "JSON_BODY_FORMAT_REQUIRED",
-    //                     "Message": "JSON format is required",
-    //                     "Mark": "456EE56536AA-",
-    //                     "Log": null,
-    //                     "IsError": true,
-    //                     "Errors": {},
-    //                     "Warnings": {},
-    //                     "Count": 0,
-    //                     "Data": {}
-    //                   }
-    //                 )"_json;
-
-    // const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-    // result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
-
-    //ctx->response->Json( result );
 
   }
 
