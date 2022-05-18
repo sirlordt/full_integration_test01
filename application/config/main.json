@@ -44,8 +44,36 @@
   },
   "tokens": {
     "534b1c6b-f759-4195-872b-aa5d8c9871f7": {
-      "deny": [ "" ],
-      "allow": [ "*" ]
+      "enabled": true,
+      "*": {
+        "rules": {
+          "deny": [],
+          "allow": [ "*" ]
+        }
+      }
+    },
+    "88fd5bea-af38-4c2b-9033-a7de4740b3cd": {
+      "enabled": true,
+      "sql_01": {
+        "rules": {
+          "deny": [ "Delete \\* From sysPerson" ],
+          "allow": [ "*" ]
+        }
+      },
+      "*": {
+        "rules": {
+          "deny": [],
+          "allow": [ "*" ]
+        }
+      }
+    },
+    "*": {
+      "*": {
+        "rules": {
+          "deny": [ "*" ],
+          "allow": []
+        }
+      }
     }
   }
 }

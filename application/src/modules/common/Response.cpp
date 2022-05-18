@@ -118,7 +118,45 @@ NLOJSONObject build_basic_response( uint16_t status_code,
     //                                log,
     //                                false );
 
+  }
+  catch ( const std::exception &ex ) {
 
+    hloge( "Exception: %s", ex.what() );
+
+    std::cout << "Exception: " << ex.what() << std::endl;
+
+  }
+
+  return result;
+
+}
+
+NLOJSONObject build_detail_block_response( const std::string& code,
+                                           const std::string& message,
+                                           const std::string& mark,
+                                           const std::string& details ) {
+
+  NLOJSONObject result;
+
+  try {
+
+    const std::string json_template = R"(
+                                          {
+                                            "Code": "%1%",
+                                            "Message": "%2%",
+                                            "Mark": "%3%",
+                                            "Details": %4%
+                                          }
+                                        )";
+
+    boost::format fmt = boost::format( json_template ) % code
+                                                       % message
+                                                       % mark
+                                                       % ( details != "" ? details: "{}" );
+
+    //const auto &temp = fmt.str();
+
+    result = nlohmann::ordered_json::parse( fmt.str() );
 
   }
   catch ( const std::exception &ex ) {

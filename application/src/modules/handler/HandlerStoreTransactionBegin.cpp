@@ -36,10 +36,10 @@ int handler_store_transaction_begin( const HttpContextPtr& ctx ) {
       if ( json_body[ "Autorization" ].is_null() == false &&
            Common::trim( json_body[ "Autorization" ] ) != "" ) {
 
-        status_code = check_token_is_valid_and_authorized( Common::trim( json_body[ "Autorization" ] ) );
+        status_code = check_token_is_valid_and_enabled( Common::trim( json_body[ "Autorization" ] ) );
 
         //check the token
-        if ( status_code = 200 ) {
+        if ( status_code == 200 ) {
 
           if ( json_body[ "Store" ].is_null() == false &&
                Common::trim( json_body[ "Store" ] ) != "" ) {

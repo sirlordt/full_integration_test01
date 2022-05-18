@@ -98,4 +98,9 @@ NLOJSONObject build_basic_response( uint16_t status_code,
                                     bool is_error,
                                     const std::string& log );
 
+NLOJSONObject build_detail_block_response( const std::string& code,
+                                           const std::string& message,
+                                           const std::string& mark,
+                                           const std::string& details );
+
 }

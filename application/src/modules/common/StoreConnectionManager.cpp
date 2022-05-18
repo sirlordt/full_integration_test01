@@ -93,14 +93,14 @@ bool StoreConnectionManager::init_stores_connections( Common::NJSONElementArray 
           }
           else {
 
-            hlogw( "The store connection with name [%s] already exists. Please check your config file.", name );
+            hlogw( "The store connection with name [%s] already exists. Please check your config file.", name.c_str() );
 
           }
 
         }
         else {
 
-          hlogw( "The store connection with name [%s] has invalid values. Please check your config file.", name );
+          hlogw( "The store connection with name [%s] has invalid values. Please check your config file.", name.c_str() );
 
         }
 
@@ -148,8 +148,8 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElement
             else {
 
               hlogw( "The alias with name: [%s] and value of [%s]. But already exists in alias name list. Please check your config file.",
-                     it->first,
-                     it->second );
+                     it->first.c_str(),
+                     it->second.to_string().c_str() );
 
             }
 
@@ -157,8 +157,8 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElement
           else {
 
             hlogw( "The alias with name: [%s] has value of [%s]. But not exists in stores connections name list. Please check your config file.",
-                   it->first,
-                   it->second );
+                   it->first.c_str(),
+                   it->second.to_string().c_str() );
 
           }
 
