@@ -93,14 +93,14 @@ bool StoreConnectionManager::init_stores_connections( Common::NJSONElementArray 
           }
           else {
 
-            hlogw( "The store connection with name [%s] already exists. Please check your config file.", name.c_str() );
+            hlogw( "The store connection with name [%s] already exists. Please check server config file", name.c_str() );
 
           }
 
         }
         else {
 
-          hlogw( "The store connection with name [%s] has invalid values. Please check your config file.", name.c_str() );
+          hlogw( "The store connection with name [%s] has invalid values. Please check server config file", name.c_str() );
 
         }
 
@@ -147,7 +147,7 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElement
             }
             else {
 
-              hlogw( "The alias with name: [%s] and value of [%s]. But already exists in alias name list. Please check your config file.",
+              hlogw( "The alias with name: [%s] and value of [%s]. But already exists in alias name list. Please check server config file",
                      it->first.c_str(),
                      it->second.to_string().c_str() );
 
@@ -156,7 +156,7 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElement
           }
           else {
 
-            hlogw( "The alias with name: [%s] has value of [%s]. But not exists in stores connections name list. Please check your config file.",
+            hlogw( "The alias with name: [%s] has value of [%s]. But not exists in stores connections name list. Please check server config file",
                    it->first.c_str(),
                    it->second.to_string().c_str() );
 
@@ -165,14 +165,14 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElement
         }
         else {
 
-          hlogw( "The alias with name: [%s] has invalid or empty value. Please check your config file." );
+          hlogw( "The alias with name: [%s] has invalid or empty value. Please check server config file" );
 
         }
 
       }
       else {
 
-        hlogw( "The alias has invalid or empty name. Please check your config file." );
+        hlogw( "The alias has invalid or empty name. Please check server config file" );
 
       }
 
@@ -187,6 +187,27 @@ bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElement
     hloge( "Exception: %s", ex.what() );
 
     std::cout << "Exception: " << ex.what() << std::endl;
+
+  }
+
+  return result;
+
+}
+
+std::string StoreConnectionManager::store_connection_name_to_real_name( const std::string& name ) {
+
+  std::string result {};
+
+  std::lock_guard<std::mutex> lock_guard( mutex_ );
+
+  if ( map_name_to_queue_store_connection_.find( name ) != map_name_to_queue_store_connection_.end() ) {
+
+    result = name;
+
+  }
+  else if ( map_store_connection_alias_name_to_real_name_.find( name ) !=  map_store_connection_alias_name_to_real_name_.end() ) {
+
+    result = map_store_connection_alias_name_to_real_name_[ name ];
 
   }
 

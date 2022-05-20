@@ -42,36 +42,58 @@
     "support": "no_sql_01",
     "cache": "no_sql_02"
   },
-  "tokens": {
-    "534b1c6b-f759-4195-872b-aa5d8c9871f7": {
-      "enabled": true,
-      "*": {
-        "rules": {
-          "deny": [],
-          "allow": [ "*" ]
+  "security": {
+    "default": "deny",
+    "tokens": {
+      "534b1c6b-f759-4195-872b-aa5d8c9871f7": {
+        "enabled": true,
+        "*": {
+          "rules": {
+            "list": [
+                      {
+                        "kind": "exact",
+                        "expression": "*",
+                        "action": "allow"
+                      }
+                    ],
+            "deny": [],
+            "allow": [ "*" ]
+          }
         }
-      }
-    },
-    "88fd5bea-af38-4c2b-9033-a7de4740b3cd": {
-      "enabled": true,
-      "sql_01": {
-        "rules": {
-          "deny": [ "Delete \\* From sysPerson" ],
-          "allow": [ "*" ]
+      },
+      "88fd5bea-af38-4c2b-9033-a7de4740b3cd": {
+        "enabled": true,
+        "sql_01": {
+          "rules": {
+            "list": [],
+            "deny": [
+              {
+                "kind": "reg_exp",
+                "expression": ".*Delete.+From.*"
+              },
+              {
+                "kind": "exact",
+                "expression": "Delete From sysPerson"
+              }
+            ],
+            "allow": [ "*" ]
+          }
+        },
+        "*": {
+          "rules": {
+            "list": [],
+            "deny": [],
+            "allow": [ "*" ]
+          }
         }
       },
       "*": {
-        "rules": {
-          "deny": [],
-          "allow": [ "*" ]
-        }
-      }
-    },
-    "*": {
-      "*": {
-        "rules": {
-          "deny": [ "*" ],
-          "allow": []
+        "*": {
+          "rules": {
+            "list": [],
+            "deny": [ "*" ],
+            "allow": []
+          }
         }
       }
     }

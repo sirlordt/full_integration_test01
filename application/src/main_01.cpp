@@ -45,8 +45,6 @@
 
 #include "modules/common/StoreConnectionManager.hpp"
 
-Common::NJSONElement config_json;
-
 /*
  * #define TEST_HTTPS 1
  *
@@ -85,10 +83,10 @@ bool init_stores() {
 
   int result { 0 };
 
-  if ( config_json[ "stores_connections" ].is_defined() &&
-       config_json[ "stores_connections" ].is_array() ) {
+  if ( Common::config_json[ "stores_connections" ].is_defined() &&
+       Common::config_json[ "stores_connections" ].is_array() ) {
 
-    auto stores_connections_config_list = config_json[ "stores_connections" ].as_array_ref();
+    auto stores_connections_config_list = Common::config_json[ "stores_connections" ].as_array_ref();
 
     Store::StoreConnectionManager::init_stores_connections( stores_connections_config_list );
 
@@ -97,14 +95,14 @@ bool init_stores() {
   }
   else {
 
-    hlogw( "No stores_connections section found or is not array of valid objects. Please check your config file." );
+    hlogw( "No stores_connections section found or is not array of valid objects. Please check server config file" );
 
   }
 
-  if ( config_json[ "stores_connections_alias" ].is_defined() &&
-       config_json[ "stores_connections_alias" ].is_object() ) {
+  if ( Common::config_json[ "stores_connections_alias" ].is_defined() &&
+       Common::config_json[ "stores_connections_alias" ].is_object() ) {
 
-    auto stores_connections_alias_config_object = config_json[ "stores_connections_alias" ].as_object_ref();
+    auto stores_connections_alias_config_object = Common::config_json[ "stores_connections_alias" ].as_object_ref();
 
     Store::StoreConnectionManager::init_stores_connections_alias( stores_connections_alias_config_object );
 
@@ -120,7 +118,7 @@ bool init_stores() {
   }
   else {
 
-    hlogw( "No stores_connections_alias section found or is not valid object. Please check your config file." );
+    hlogw( "No stores_connections_alias section found or is not valid object. Please check server config file" );
 
   }
 
@@ -157,11 +155,11 @@ int main( int argc, char** argv ) {
 
   std::cout << "Config File: " << config_file_path << std::endl;
 
-  config_json = Common::get_config( config_file_path );
+  Common::config_json = Common::get_config( config_file_path );
 
   init_stores();
 
-  int port = config_json[ "port" ].is_number() ? config_json[ "port" ].to_integer(): 8080;
+  int port = Common::config_json[ "port" ].is_number() ? Common::config_json[ "port" ].to_integer(): 8080;
 
   // if ( argc > 1 ) {
 
@@ -178,7 +176,7 @@ int main( int argc, char** argv ) {
   //router.largeFileHandler = Handler::largeFileHandler;
   router.errorHandler = Handler::errorHandler;
 
-  std::string base_path = config_json[ "base_path" ].is_string() ? config_json[ "base_path" ].to_string(): "";
+  std::string base_path = Common::config_json[ "base_path" ].is_string() ? Common::config_json[ "base_path" ].to_string(): "";
 
   std::stringstream end_point;
 
@@ -360,7 +358,7 @@ int main( int argc, char** argv ) {
 
   //hlogi("(Before) Log file is: %s", g_main_ctx.logfile);
 
-  int threads = std::stoi( config_json[ "threads" ] );
+  int threads = std::stoi( Common::config_json[ "threads" ] );
 
   server.worker_threads = threads > 0 ? threads: 4;
 

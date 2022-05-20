@@ -32,6 +32,7 @@ public:
   static bool init_stores_connections( Common::NJSONElementArray &stores_connections_config_list );
   static bool init_stores_connections_alias( Common::NJSONElementObject &stores_connections_alias_config_list );
 
+  static std::string store_connection_name_to_real_name( const std::string& name );
   static bool store_connection_name_exists( const std::string& name );
 
   static StoreConnectionSharedPtr lease_store_connection_by_name( const std::string& name );

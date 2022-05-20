@@ -25,6 +25,8 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
   u_int16_t status_code = 200;
 
+  const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
+
   if ( type == APPLICATION_JSON ) {
 
     try {
@@ -34,10 +36,10 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
       if ( json_body[ "Autorization" ].is_null() == false &&
            Common::trim( json_body[ "Autorization" ] ) != "" ) {
 
-        status_code = Handlers::check_token_is_valid_and_enabled( Common::trim( json_body[ "Autorization" ] ) );
+        //status_code = Handlers::check_token_is_valid_and_enabled( Common::trim( json_body[ "Autorization" ] ) );
 
         //check the token
-        if ( status_code == 200 ) {
+        //if ( status_code == 200 ) {
 
           if ( json_body[ "TransactionId" ].is_null() == false &&
                Common::trim( json_body[ "TransactionId" ] ) != "" ) {
@@ -88,28 +90,14 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
                 status_code = 200; //Ok
 
-                auto result = R"(
-                                  {
-                                    "StatusCode": 200,
-                                    "Code": "SUCCESS_STORE_SQL_TRANSACTION_COMMIT",
-                                    "Message": "Success commit Store SQL Transaction",
-                                    "Mark": "840BC8F6452E-",
-                                    "Log": null,
-                                    "IsError": false,
-                                    "Errors": {}
-                                    "Warnings": {},
-                                    "Count": 1,
-                                    "Data": {
-                                              "TransactionId": ""
-                                            }
-                                  }
-                                )"_json;
+                auto result = Common::build_basic_response( status_code,
+                                                            "SUCCESS_STORE_SQL_TRANSACTION_COMMIT",
+                                                            "Success commit Store SQL Transaction",
+                                                            "840BC8F6452E-" + thread_id,
+                                                            false,
+                                                            "" );
 
-                const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-                result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
-
-                result[ "Data" ][ 0 ][ "TransactionId" ] = transaction_id;
+                result[ "Data" ][ "TransactionId" ] = transaction_id;
 
                 ctx->response->content_type = APPLICATION_JSON;
                 ctx->response->body = result.dump( 2 );
@@ -122,24 +110,12 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
                 status_code = 400; //Bad request
 
-                auto result = R"(
-                                  {
-                                    "StatusCode": 400,
-                                    "Code": "ERROR_STORE_SQL_TRANSACTION_IS_NOT_ACTIVE",
-                                    "Message": "The Store SQL Transactin is not active",
-                                    "Mark": "E7B7762CD85E-",
-                                    "Log": null,
-                                    "IsError": true,
-                                    "Errors": {},
-                                    "Warnings": {},
-                                    "Count": 0,
-                                    "Data": {}
-                                  }
-                                )"_json;
-
-                const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-                result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+                auto result = Common::build_basic_response( status_code,
+                                                            "ERROR_STORE_SQL_TRANSACTION_IS_NOT_ACTIVE",
+                                                            "The Store SQL Transactin is not active",
+                                                            "E7B7762CD85E-" + thread_id,
+                                                            true,
+                                                            "" );
 
                 ctx->response->content_type = APPLICATION_JSON;
                 ctx->response->body = result.dump( 2 );
@@ -154,24 +130,12 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
               status_code = 400; //Bad request
 
-              auto result = R"(
-                                {
-                                  "StatusCode": 400,
-                                  "Code": "ERROR_TRANSACTIONID_IS_INVALID",
-                                  "Message": "The transaction id is invalid or not found",
-                                  "Mark": "E7B98C331792-",
-                                  "Log": null,
-                                  "IsError": true,
-                                  "Errors": {},
-                                  "Warnings": {},
-                                  "Count": 0,
-                                  "Data": {}
-                                }
-                              )"_json;
-
-              const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-              result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+              auto result = Common::build_basic_response( status_code,
+                                                          "ERROR_TRANSACTIONID_IS_INVALID",
+                                                          "The transaction id is invalid or not found",
+                                                          "E7B98C331792-" + thread_id,
+                                                          true,
+                                                          "" );
 
               ctx->response->content_type = APPLICATION_JSON;
               ctx->response->body = result.dump( 2 );
@@ -186,24 +150,12 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
             status_code = 400; //Bad request
 
-            auto result = R"(
-                              {
-                                "StatusCode": 400,
-                                "Code": "ERROR_MISSING_FIELD_TRANSACTIONID",
-                                "Message": "The field TransactionId is required and cannot be empty or null",
-                                "Mark": "0FE53C912836-",
-                                "Log": null,
-                                "IsError": true,
-                                "Errors": {},
-                                "Warnings": {},
-                                "Count": 0,
-                                "Data": {}
-                              }
-                            )"_json;
-
-            const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-            result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+            auto result = Common::build_basic_response( status_code,
+                                                        "ERROR_MISSING_FIELD_TRANSACTIONID",
+                                                        "The field TransactionId is required and cannot be empty or null",
+                                                        "0FE53C912836-" + thread_id,
+                                                        true,
+                                                        "" );
 
             ctx->response->content_type = APPLICATION_JSON;
             ctx->response->body = result.dump( 2 );
@@ -213,75 +165,41 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
           }
 
+        /*
         }
         else if ( status_code == 401 ) { //Unauthorized
 
-          auto result = R"(
-                            {
-                              "StatusCode": 401,
-                              "Code": "ERROR_AUTHORIZATION_TOKEN_NOT_VALID",
-                              "Message": "The authorization token provided is not valid or not found",
-                              "Mark": "CDF0C67A4582-",
-                              "Log": null,
-                              "IsError": true,
-                              "Errors": {},
-                              "Warnings": {},
-                              "Count": 0,
-                              "Data": {}
-                            }
-                          )"_json;
-
-          const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-          result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+          auto result = Common::build_basic_response( status_code,
+                                                      "ERROR_AUTHORIZATION_TOKEN_NOT_VALID",
+                                                      "The authorization token provided is not valid or not found",
+                                                      "CDF0C67A4582-" + thread_id,
+                                                      true,
+                                                      "" );
 
         }
         else if ( status_code == 403 ) { //Forbidden
 
-          auto result = R"(
-                            {
-                              "StatusCode": 403,
-                              "Code": "ERROR_NOT_ALLOWED_ACCESS_TO_STORE",
-                              "Message": "Not allowed access to store",
-                              "Mark": "829B51ED7AE4-",
-                              "Log": null,
-                              "IsError": true,
-                              "Errors": {},
-                              "Warnings": {},
-                              "Count": 0,
-                              "Data": {}
-                            }
-                          )"_json;
-
-          const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-          result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+          auto result = Common::build_basic_response( status_code,
+                                                      "ERROR_NOT_ALLOWED_ACCESS_TO_STORE",
+                                                      "Not allowed access to store",
+                                                      "829B51ED7AE4-" + thread_id,
+                                                      true,
+                                                      "" );
 
         }
+        */
 
       }
       else {
 
         status_code = 400; //Bad request
 
-        auto result = R"(
-                          {
-                            "StatusCode": 400,
-                            "Code": "ERROR_MISSING_FIELD_AUTORIZATION",
-                            "Message": "The field Autorization is required and cannot be empty or null",
-                            "Mark": "3EB0E43D2773-",
-                            "Log": null,
-                            "IsError": true,
-                            "Errors": {},
-                            "Warnings": {},
-                            "Count": 0,
-                            "Data": {}
-                          }
-                        )"_json;
-
-        const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-        result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+        auto result = Common::build_basic_response( status_code,
+                                                    "ERROR_MISSING_FIELD_AUTORIZATION",
+                                                    "The field Autorization is required and cannot be empty or null",
+                                                    "3EB0E43D2773-" + thread_id,
+                                                    true,
+                                                    "" );
 
         ctx->response->content_type = APPLICATION_JSON;
         ctx->response->body = result.dump( 2 );
@@ -325,24 +243,12 @@ int handler_store_transaction_commit( const HttpContextPtr& ctx ) {
 
     status_code = 400; //Bad request
 
-    auto result = R"(
-                      {
-                        "StatusCode": 400,
-                        "Code": "JSON_BODY_FORMAT_REQUIRED",
-                        "Message": "JSON format is required",
-                        "Mark": "5AA705EE0690-",
-                        "Log": null,
-                        "IsError": true,
-                        "Errors": {},
-                        "Warnings": {},
-                        "Count": 0,
-                        "Data": {}
-                      }
-                    )"_json;
-
-    const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-    result[ "Mark" ] = result[ "Mark" ].get<std::string>() + thread_id; //result[ "Mark" ].value + "-" + std::this_thread::get_id();
+    auto result = Common::build_basic_response( status_code,
+                                                "JSON_BODY_FORMAT_REQUIRED",
+                                                "JSON format is required",
+                                                "5AA705EE0690-" + thread_id,
+                                                true,
+                                                "" );
 
     ctx->response->content_type = APPLICATION_JSON;
     ctx->response->body = result.dump( 2 );

@@ -15,6 +15,8 @@
 
 namespace Common {
 
+NJSONElement config_json {};
+
 const std::string get_file_path( const std::string& file )
 {
 
