@@ -7,9 +7,17 @@
 
 namespace Security {
 
-int16_t check_autorization_is_valid_and_enabled( const std::string &token,
-                                                 const std::string &store,
-                                                 Common::NJSONElement& rules );
+struct CheckAuthorizationResult {
+
+  int16_t value { 0 };
+  Common::NJSONElement* rules { nullptr };
+  u_int16_t max_active_transactions { 1 };
+
+};
+
+void check_autorization( const std::string &token,
+                         const std::string &store,
+                         CheckAuthorizationResult& result );
 
 int16_t check_command_to_store_is_authorizated( const std::string& authorization,
                                                 const std::string& store,

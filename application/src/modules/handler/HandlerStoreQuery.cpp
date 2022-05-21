@@ -74,7 +74,7 @@ inline void execute_sql_query( const std::string& thread_id,
 
                   soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << command );
 
-                  auto data_list = hv::Json::array();
+                  auto data_list = nlohmann::ordered_json::array(); //hv::Json::array();
 
                   for ( soci::rowset<soci::row>::const_iterator it = rs.begin(); it != rs.end(); ++it ) {
 
@@ -94,9 +94,37 @@ inline void execute_sql_query( const std::string& thread_id,
 
                         switch( props.get_data_type() ) {
                           case soci::dt_string:
-                          case soci::dt_xml:
-                              doc << '\"' << row.get<std::string>( i ) << "\"";
-                              break;
+                          case soci::dt_xml: {
+
+                            const std::string value = row.get<std::string>( i );
+
+                            if ( value != "" &&
+                                 value[ 0 ] == '{' &&
+                                 value[ value.length() - 1 ] == '}' ) {
+
+                              try {
+
+                                [[maybe_unused]] auto temp = hv::Json::parse( value );
+
+                                doc << value;
+
+                              }
+                              catch ( ... ) {
+
+                                doc << '\"' << value << "\"";
+
+                              }
+
+                            }
+                            else {
+
+                              doc << '\"' << value << "\"";
+
+                            }
+
+                            break;
+
+                          }
                           case soci::dt_double:
                               doc << row.get<double>( i );
                               break;
@@ -132,7 +160,9 @@ inline void execute_sql_query( const std::string& thread_id,
 
                     doc << "}" << std::endl;
 
-                    data_list.push_back( hv::Json::parse( doc.str() ) );
+                    //std::cout << doc.str() << std::endl;
+
+                    data_list.push_back( nlohmann::ordered_json::parse( doc.str() ) ); //hv::Json::parse( doc.str() ) );
                     result[ "Count" ] = result[ "Count" ].get<int>() + 1;
 
                   }
@@ -251,6 +281,8 @@ inline void execute_sql_query( const std::string& thread_id,
 
             result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
+            hloge( "Exception: %s", ex.what() );
+
           }
 
           execute_list_size += 1;
@@ -282,6 +314,8 @@ inline void execute_sql_query( const std::string& thread_id,
           store_sql_connection_in_transaction->rollback(); //Rollback the transaction
 
         }
+
+        hloge( "Exception: %s", ex.what() );
 
       }
 
@@ -342,9 +376,9 @@ inline void execute_mongodb_query( const std::string& thread_id,
         if ( command != "" ) {
 
           const auto& check_command_result = Security::check_command_to_store_is_authorizated( authorization,
-                                                                                                store,
-                                                                                                command,
-                                                                                                store_rule_list );
+                                                                                               store,
+                                                                                               command,
+                                                                                               store_rule_list );
 
           if ( check_command_result == 101 ) { //Command authorized
 
@@ -561,6 +595,8 @@ inline void execute_mongodb_query( const std::string& thread_id,
 
         result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
+        hloge( "Exception: %s", ex.what() );
+
       }
 
       execute_list_size += 1;
@@ -580,6 +616,8 @@ inline void execute_mongodb_query( const std::string& thread_id,
     result_error[ "Details" ][ "Message" ] = ex.what();
 
     result[ "Errors" ][ execute_id ] = result_error;
+
+    hloge( "Exception: %s", ex.what() );
 
   }
 
@@ -651,6 +689,8 @@ inline void execute_redis_query( const std::string& thread_id,
                   catch ( std::exception &ex ) {
 
                     result[ "Data" ][ execute_id + "_" + std::to_string( command_index ) ] = s_result;
+
+                    hloge( "Exception: %s", ex.what() );
 
                   }
 
@@ -782,6 +822,8 @@ inline void execute_redis_query( const std::string& thread_id,
 
         result[ "Errors" ][ execute_id + "_" + std::to_string( command_index ) ] = result_error;
 
+        hloge( "Exception: %s", ex.what() );
+
         // auto result_error = R"(
         //                         {
         //                           "Code": "ERROR_TO_EXECUTE_COMMAND",
@@ -823,6 +865,8 @@ inline void execute_redis_query( const std::string& thread_id,
     result_error[ "Details" ][ "Message" ] = ex.what();
 
     result[ "Errors" ][ execute_id ] = result_error;
+
+    hloge( "Exception: %s", ex.what() );
 
     // auto result_error = R"(
     //                         {
@@ -1042,11 +1086,13 @@ inline void execute_block_command_list( const std::string& thread_id,
 
         Common::NJSONElement store_rule_list {};
 
-        int16_t check_token_result = Security::check_autorization_is_valid_and_enabled( authorization,
-                                                                                        store,
-                                                                                        store_rule_list );
+        Security::CheckAuthorizationResult check_authorization_result { 1, nullptr, 1 };
 
-        if ( check_token_result == 1 ) { //OK
+        Security::check_autorization( authorization,
+                                      store,
+                                      check_authorization_result );
+
+        if ( check_authorization_result.value == 1 ) { //OK
 
           execute_command_list( thread_id,
                                 authorization,
@@ -1055,11 +1101,12 @@ inline void execute_block_command_list( const std::string& thread_id,
                                 transaction_id,
                                 command_list,
                                 execute_list_size,
-                                store_rule_list,
+                                check_authorization_result.rules ? *check_authorization_result.rules: store_rule_list,
+                                //store_rule_list,
                                 result );
 
         }
-        else if ( check_token_result == -1 ) {
+        else if ( check_authorization_result.value == -1 ) { //Exception in Security::check_autorization_is_valid_and_enabled
 
           status_code = 401; //Unhathorized
 
@@ -1072,7 +1119,7 @@ inline void execute_block_command_list( const std::string& thread_id,
           break; //Not continue
 
         }
-        else if ( check_token_result == -100 ) {
+        else if ( check_authorization_result.value == -100 ) {
 
           status_code = 401; //Unhathorized
 
@@ -1085,7 +1132,7 @@ inline void execute_block_command_list( const std::string& thread_id,
           break; //Not continue
 
         }
-        else if ( check_token_result == -101 ) {
+        else if ( check_authorization_result.value == -101 ) {
 
           status_code = 401; //Unhathorized
 
@@ -1098,14 +1145,14 @@ inline void execute_block_command_list( const std::string& thread_id,
           break; //Not continue
 
         }
-        else if ( check_token_result == -102 ) {
+        else if ( check_authorization_result.value == -102 ) {
 
           status_code = 403; //Forbidden
 
           result[ "StatusCode" ] = status_code;
-          result[ "Code" ] = "ERROR_STORE_NOT_RULES_DEFINED";
-          result[ "Message" ] = "The store rules section in the config file not found are invalid. Please check server config file";
-          result[ "Mark" ] = "9CF55E#CB6BAD-" + thread_id;
+          result[ "Code" ] = "ERROR_STORE_RULES_NOT_DEFINED";
+          result[ "Message" ] = "The store rules section in the config file not found or are invalid. Please check server config file";
+          result[ "Mark" ] = "9CF55ECB6BAD-" + thread_id;
           result[ "IsError" ] = true;
 
           break; //Not continue
@@ -1133,7 +1180,7 @@ inline void execute_block_command_list( const std::string& thread_id,
 
       auto result_error = Common::build_detail_block_response( "ERROR_STORE_NAME_NOT_FOUND",
                                                                "The Store name not found in json body request",
-                                                               "AB8A4A9926B9-" + thread_id,
+                                                               "32249E938B78-" + thread_id,
                                                                "{ \"Id\": \"\" }" );
 
       result_error[ "Details" ][ "Id" ] = execute_id;
@@ -1203,6 +1250,8 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
   const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
 
+  auto result = Common::build_basic_response( 200, "", "", "", false, "" );
+
   if ( type == APPLICATION_JSON ) {
 
     try {
@@ -1211,16 +1260,14 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
       //std::cout << json_body.dump( 2 ) << std::endl;
 
-      if ( json_body[ "Autorization" ].is_null() == false &&
-           Common::trim( json_body[ "Autorization" ] ) != "" ) {
+      if ( json_body[ "Authorization" ].is_null() == false &&
+           Common::trim( json_body[ "Authorization" ] ) != "" ) {
 
-        const std::string &authorization = Common::trim( json_body[ "Autorization" ] );
+        const std::string &authorization = Common::trim( json_body[ "Authorization" ] );
 
         if ( json_body[ "Execute" ].is_null() == false &&
              json_body[ "Execute" ].is_array() &&
              json_body[ "Execute" ].size() > 0 ) {
-
-          auto result = Common::build_basic_response( 200, "", "", "", false, "" );
 
           execute_block_command_list( thread_id,
                                       status_code,
@@ -1228,27 +1275,16 @@ int handler_store_query( const HttpContextPtr& ctx ) {
                                       authorization,
                                       result );
 
-          ctx->response->content_type = APPLICATION_JSON;
-          ctx->response->body = result.dump( 2 );
-
-          //ctx->response->Json( result );
-
         }
         else {
 
           status_code = 400; //Bad request
 
-          const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-          const auto& result = Common::build_basic_response( status_code,
-                                                             "ERROR_MISSING_FIELD_EXECUTE",
-                                                             "The field Execute is required as array of strings and cannot be empty or null",
-                                                             "FEE80B366130-" + thread_id,
-                                                             true,
-                                                             "" );
-
-          ctx->response->content_type = APPLICATION_JSON;
-          ctx->response->body = result.dump( 2 );
+          result[ "StatusCode" ] = status_code;
+          result[ "Code" ] = "ERROR_MISSING_FIELD_EXECUTE";
+          result[ "Message" ] = "The field Execute is required as array of strings and cannot be empty or null";
+          result[ "Mark" ] = "FEE80B366130-" + thread_id;
+          result[ "IsError" ] = true;
 
         }
 
@@ -1257,17 +1293,11 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
         status_code = 400; //Bad request
 
-        const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-        const auto& result = Common::build_basic_response( status_code,
-                                                           "ERROR_MISSING_FIELD_AUTORIZATION",
-                                                           "The field Autorization is required and cannot be empty or null",
-                                                           "E97A1FD111E8-" + thread_id,
-                                                           true,
-                                                           "" );
-
-        ctx->response->content_type = APPLICATION_JSON;
-        ctx->response->body = result.dump( 2 );
+        result[ "StatusCode" ] = status_code;
+        result[ "Code" ] = "ERROR_MISSING_FIELD_AUTORIZATION";
+        result[ "Message" ] = "The field Autorization is required and cannot be empty or null";
+        result[ "Mark" ] = "E97A1FD111E8-" + thread_id;
+        result[ "IsError" ] = true;
 
       }
 
@@ -1276,23 +1306,15 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
       status_code = 500; //Internal server error
 
-      const std::string& thread_id = Common::xxHash_32( Common::get_thread_id() );
-
-      auto result = Common::build_basic_response( status_code,
-                                                  "ERROR_UNEXPECTED_EXCEPTION",
-                                                  "Unexpected error. Please read the server log for more details.",
-                                                  "F9B4CCCCAC92-" + thread_id,
-                                                  true,
-                                                  "" );
+      result[ "StatusCode" ] = status_code;
+      result[ "Code" ] = "ERROR_UNEXPECTED_EXCEPTION";
+      result[ "Message" ] = "Unexpected error. Please read the server log for more details";
+      result[ "Mark" ] = "F9B4CCCCAC92-" + thread_id;
+      result[ "IsError" ] = true;
 
       result[ "Errors" ][ "Code" ] = "ERROR_INVALID_JSON_BODY_DATA";
       result[ "Errors" ][ "Message" ] = ex.what();
       result[ "Errors" ][ "Details" ] = {};
-
-      ctx->response->content_type = APPLICATION_JSON;
-      ctx->response->body = result.dump( 2 );
-
-      //ctx->response->Json( result );
 
       hloge( "Exception: %s", ex.what() );
 
@@ -1303,17 +1325,18 @@ int handler_store_query( const HttpContextPtr& ctx ) {
 
     status_code = 400; //Bad request
 
-    const auto& result = Common::build_basic_response( status_code,
-                                                       "JSON_BODY_FORMAT_REQUIRED",
-                                                       "JSON format is required",
-                                                       "456EE56536AA-" + thread_id,
-                                                       true,
-                                                       "" );
-
-    ctx->response->content_type = APPLICATION_JSON;
-    ctx->response->body = result.dump( 2 );
+    result[ "StatusCode" ] = status_code;
+    result[ "Code" ] = "JSON_BODY_FORMAT_REQUIRED";
+    result[ "Message" ] = "JSON format is required";
+    result[ "Mark" ] = "456EE56536AA-" + thread_id;
+    result[ "IsError" ] = true;
 
   }
+
+  ctx->response->content_type = APPLICATION_JSON;
+  ctx->response->body = result.dump( 2 );
+
+  //ctx->response->Json( result );
 
   return status_code;
 

@@ -1,0 +1,602 @@
+{
+	"info": {
+		"_postman_id": "4345462b-99f8-4a7d-a06b-45555ee095e9",
+		"name": "DataGateway",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "258785"
+	},
+	"item": [
+		{
+			"name": "/ping",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/ping",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"ping"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/paths",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/paths",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"paths"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/get",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/get",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/transaction/begin",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"TransactionId\": \"17fa8dea-0d25-4cbb-aec9-2b38975676f8\",\n  \"Store\": \"main\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/transaction/begin",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"transaction",
+						"begin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/transaction/commit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"TransactionId\": \"17fa8dea-0d25-4cbb-aec9-2b38975676f8\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/transaction/commit",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"transaction",
+						"commit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/transaction/rollback",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"TransactionId\": \"17fa8dea-0d25-4cbb-aec9-2b38975676f8\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/transaction/rollback",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"transaction",
+						"rollback"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 1)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select * From sysPerson Where Id <> 'xxx1'\",\n                       \"Select * From sysPerson Where Id = '1f0a95cc-e9e8-43ad-9325-c367a2b17e29'\"\n                     ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 2)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\", \"02\", \"03\", \"04\", \"05\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [ \n                       \"Insert Into sysPerson(Id,FirstName,LastName,ExtraData) Values(\\\"xxx1\\\",\\\"Tomás\\\",\\\"Moreno\\\",'{ \\\"Data\\\": \\\"L1\\\" }')\",\n                       \"Insert Into sysPerson(Id,FirstName,LastName,ExtraData) Values(\\\"xxx2\\\",\\\"Loly\\\",\\\"Gómez\\\",null)\"\n                     ]\n        },\n  \"02\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select * From sysPerson Where Id <> 'xxx1'\",\n                       \"Select * From noExistsTable Where NoExitsField = 'any'\"\n                     ]\n        },\n  \"03\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [ \n                       \"Update sysPerson Set Id = '007' Where Id = 'xxx1'\",\n                       \"Update sysPerson Set Id = '002' Where Id = 'xxx2'\"\n                     ]\n        },\n  \"04\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select * From sysPerson Where Id = '007'\",\n                       \"Select * From sysPerson Where Id = '002'\"\n                     ]\n        },\n  \"05\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [ \n                       \"Delete From sysPerson Where Id = '007'\",\n                       \"Delete From sysPerson Where Id = '002'\"\n                     ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 3)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"sql_01\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Insert Into sysPerson(Id,FirstName,LastName,ExtraData) Values(\\\"xxx1\\\",\\\"Tomás\\\",\\\"Moreno\\\",null)\",\n                             \"Insert Into sysPerson(Id,FirstName,LastName,ExtraData) Values(\\\"xxx2\\\",\\\"Loly\\\",\\\"Gómez\\\",null)\",\n                             \"Select * From sysPerson Where Id <> 'xxx1'\",\n                             \"Select * From noExistsTable Where NoExitsField = 'any'\",\n                             \"Update sysPerson Set Id = '007' Where Id = 'xxx1'\",\n                             \"Update sysPerson Set Id = '001' Where Id = 'xxx2'\",\n                             \"Select * From sysPerson Where Id = '007'\",\n                             \"Select * From sysPerson Where Id = '001'\",\n                             \"Delete From sysPerson Where Id = '007'\",\n                             \"Delete From sysPerson Where Id = '001'\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 4)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.FirstName As A_FirstName, A.LastName As A_LastName From sysPerson Where Id <> 'xxx1'\",\n                       \"Select * From sysPerson Where Id = '1f0a95cc-e9e8-43ad-9325-c367a2b17e29'\",\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData From sysMaster As A Inner Join sysDetailsL1 As B On B.MasterId = A.Id\"\n                     ],\n          \"Map\": [\n                   {\n                     \"A_\": { \n                             \"Key\": [ \"A_Id\" ],\n                             \"Root\": [ \"sysPerson\" ]\n                           }\n                   },\n                   {},\n                   {\n                     \"A_\": { \n                             \"Key\": [ \"A_Id\" ],\n                             \"Root\": [ \"sysMaster\" ]\n                           },\n                     \"B_\": { \n                             \"Key\": [ \"B_MasterId\" ],\n                             \"Root\": [ \"sysMaster\", \"sysDetailsL1\" ]\n                           },\n                     \"C_\": { \n                             \"Key\": [ \"C_DetailsL1Id\" ],\n                             \"Root\": [ \"sysMaster\", \"sysDetailsL1\", \"sysDetailsL2\" ]\n                           }\n                   }\n                 ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 5)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization_disabled\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Autorization\": \"88fd5bea-af38-4c2b-9033-a7de4740b3cd\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select * From sysPerson ;  delete from sysPerson  \",\n                       \"Select * From sysPerson\"\n                     ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (mongodb 1)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_01\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Insert Into sysPerson { \\\"Id\\\": 1, \\\"FirstName\\\": \\\"Loly\\\", \\\"LastName\\\": \\\"Gómez\\\" }\",\n                             \"Insert Into sysPerson { \\\"Id\\\": 2, \\\"FirstName\\\": \\\"Tomás\\\", \\\"LastName\\\": \\\"Moreno\\\" }\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (mongodb 2)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_01\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Select * From sysPerson Where { \\\"FirstName\\\": { \\\"$regex\\\": \\\"^Tom[aá]s\\\", \\\"$options\\\" : \\\"i\\\" } }\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (mongodb 3)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_01\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Delete From sysPerson Where { \\\"Id\\\": 1 }\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (mongodb 4)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_01\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Update Into sysPerson { \\\"$set\\\": { \\\"FirstName\\\": \\\"Loly Valentina\\\", \\\"LastName\\\": \\\"Gómez Fermín\\\" } } Where { \\\"Id\\\": 1 }\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (mongodb 5)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_01\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Insert Into sysPerson { \\\"Id\\\": 1, \\\"FirstName\\\": \\\"Loly\\\", \\\"LastName\\\": \\\"Gómez\\\" }\",\n                             \"Select * From sysPerson Where { \\\"FirstName\\\": { \\\"$regex\\\": \\\"Loly\\\", \\\"$options\\\" : \\\"i\\\" } }\",\n                             \"Update Into sysPerson { \\\"$set\\\": { \\\"FirstName\\\": \\\"Loly Valentina\\\", \\\"LastName\\\": \\\"Gómez Fermín\\\" } } Where { \\\"Id\\\": 1 }\",\n                             \"Delete From sysPerson Where { \\\"Id\\\": 1 }\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql/mongodb 6)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands_01\", \"commands_02\" ],\n  \"commands_01\": {\n                   \"Store\": \"sql_01\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Select * From sysPerson Where Id <> 'xxx1'\"\n                              ]\n                 },\n  \"commands_02\": {\n                   \"Store\": \"no_sql_01\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Select * From sysPerson Where { \\\"FirstName\\\": { \\\"$regex\\\": \\\"Tom[áa]s\\\", \\\"$options\\\" : \\\"i\\\" } }\"\n                              ]\n                 }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql/mongodb 7)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands_01\", \"commands_02\" ],\n  \"commands_01\": {\n                   \"Store\": \"sql_01\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Insert Into sysPerson(Id,FirstName,LastName,ExtraData) Values(\\\"xxx1\\\",\\\"Tomás\\\",\\\"Moreno\\\",null)\",\n                                \"Insert Into sysPerson(Id,FirstName,LastName,ExtraData) Values(\\\"xxx2\\\",\\\"Loly\\\",\\\"Gómez\\\",null)\",\n                                \"Select * From sysPerson Where Id <> 'xxx1'\",\n                                \"Select * From noExistsTable Where NoExitsField = 'any'\",\n                                \"Update sysPerson Set Id = '007' Where Id = 'xxx1'\",\n                                \"Update sysPerson Set Id = '001' Where Id = 'xxx2'\",\n                                \"Select * From sysPerson Where Id = '007'\",\n                                \"Select * From sysPerson Where Id = '001'\",\n                                \"Delete From sysPerson Where Id = '007'\",\n                                \"Delete From sysPerson Where Id = '001'\"\n                              ]\n                 },\n  \"commands_02\": {\n                   \"Store\": \"no_sql_01\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Insert Into sysPerson { \\\"Id\\\": 1, \\\"FirstName\\\": \\\"Loly\\\", \\\"LastName\\\": \\\"Gómez\\\" }\",\n                                \"Select * From sysPerson Where { \\\"FirstName\\\": { \\\"$regex\\\": \\\"Loly\\\", \\\"$options\\\" : \\\"i\\\" } }\",\n                                \"Update Into sysPerson { \\\"$set\\\": { \\\"FirstName\\\": \\\"Loly Valentina\\\", \\\"LastName\\\": \\\"Gómez Fermín\\\" } } Where { \\\"Id\\\": 1 }\",\n                                \"Delete From sysPerson Where { \\\"Id\\\": 1 }\"\n                              ]\n                 }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (redis 1)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_02\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Set__ Test_Key_01__ Test Value 01\",\n                             \"Get__ Test_Key_01\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (redis 2)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_02\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Set__ Test_Key_Json__ { \\\"key1\\\": 1, \\\"key2\\\": 2 }\",\n                             \"Expire__ Test_Key_Json__ 120\",\n                             \"Get__ Test_Key_Json\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (redis 3)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands\" ],\n  \"commands\": {\n                \"Store\": \"no_sql_02\",\n                \"TransactionId\": \"\",\n                \"Command\": [ \n                             \"Get__ Test_Key_Json\"\n                           ]\n              }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql/mongodb/redis 4)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"commands_01\", \"commands_02\", \"commands_03\" ],\n  \"commands_01\": {\n                   \"Store\": \"sql_01\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Select * From sysPerson Where Id <> 'xxx1'\"\n                              ]\n                 },\n  \"commands_02\": {\n                   \"Store\": \"no_sql_01\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Select * From sysPerson Where { \\\"FirstName\\\": { \\\"$regex\\\": \\\"Tom[áa]s\\\", \\\"$options\\\" : \\\"i\\\" } }\"\n                              ]\n                 },\n  \"commands_03\": {\n                   \"Store\": \"no_sql_02\",\n                   \"TransactionId\": \"\",\n                   \"Command\": [ \n                                \"Get__ Test_Key_Json\"\n                              ]\n                 }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

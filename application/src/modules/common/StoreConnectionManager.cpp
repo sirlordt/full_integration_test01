@@ -392,6 +392,106 @@ bool StoreConnectionManager::unregister_transaction_by_id( const std::string& id
 
 }
 
+void StoreConnectionManager::active_transaction_list_by_authorization( const std::string& authorization,
+                                                                       VectorTransactionId& result ) {
+
+  std::lock_guard<std::mutex> lock_guard( mutex_ );
+
+  if ( map_authorization_to_vector_active_transaction_id_.find( authorization ) != map_authorization_to_vector_active_transaction_id_.end() ) {
+
+    result = map_authorization_to_vector_active_transaction_id_[ authorization ];
+
+  }
+
+}
+
+std::size_t StoreConnectionManager::active_transaction_count_by_authorization( const std::string& authorization ) {
+
+  std::size_t result { 0 };
+
+  std::lock_guard<std::mutex> lock_guard( mutex_ );
+
+  if ( map_authorization_to_vector_active_transaction_id_.find( authorization ) != map_authorization_to_vector_active_transaction_id_.end() ) {
+
+    result = map_authorization_to_vector_active_transaction_id_[ authorization ].size();
+
+  }
+
+  return result;
+
+}
+
+bool StoreConnectionManager::register_transaction_id_to_authorization( const std::string& authorization,
+                                                                       const std::string& transaction_id ) {
+
+  bool result { false };
+
+  try {
+
+    std::lock_guard<std::mutex> lock_guard( mutex_ );
+
+    if ( map_authorization_to_vector_active_transaction_id_.find( authorization ) == map_authorization_to_vector_active_transaction_id_.end() ) {
+
+      map_authorization_to_vector_active_transaction_id_[ authorization ].push_back( transaction_id );
+
+      result = true;
+
+    }
+
+  }
+  catch ( const std::exception &ex ) {
+
+    hloge( "Exception: %s", ex.what() );
+
+    std::cout << "Exception: " << ex.what() << std::endl;
+
+  }
+
+  return result;
+
+;
+
+}
+
+bool StoreConnectionManager::unregister_transaction_id_by_authorization( const std::string& authorization,
+                                                                         const std::string& transaction_id ) {
+
+  bool result { false };
+
+  try {
+
+    std::lock_guard<std::mutex> lock_guard( mutex_ );
+
+    if ( map_authorization_to_vector_active_transaction_id_.find( authorization ) != map_authorization_to_vector_active_transaction_id_.end() ) {
+
+      const auto& iterator = std::find( map_authorization_to_vector_active_transaction_id_[ authorization ].begin(),
+                                        map_authorization_to_vector_active_transaction_id_[ authorization ].end(),
+                                        transaction_id );
+
+      if ( iterator != map_authorization_to_vector_active_transaction_id_[ authorization ].end() ) {
+
+        map_authorization_to_vector_active_transaction_id_[ authorization ].erase( iterator );
+
+      }
+
+      result = true;
+
+    }
+
+  }
+  catch ( const std::exception &ex ) {
+
+    hloge( "Exception: %s", ex.what() );
+
+    std::cout << "Exception: " << ex.what() << std::endl;
+
+  }
+
+  return result;
+
+}
+
+
 StoreConnectionSharedPtr StoreConnectionManager::store_connection_by_id( const std::string& id ) {
 
   StoreConnectionSharedPtr result { nullptr };

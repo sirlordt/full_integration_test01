@@ -7,11 +7,9 @@
 
 namespace Security {
 
-int16_t check_autorization_is_valid_and_enabled( const std::string& authorization,
-                                                 const std::string& store,
-                                                 Common::NJSONElement& rules ) {
-
-  int16_t result { -1 }; //Unable to process the authorization token
+void check_autorization( const std::string& authorization,
+                         const std::string& store,
+                         CheckAuthorizationResult& result ) {
 
   try {
 
@@ -38,9 +36,9 @@ int16_t check_autorization_is_valid_and_enabled( const std::string& authorizatio
                 tokens[ authorization ][ "enabled" ].as_boolean() == true
               ) ) {
 
-            auto token_options = authorization_section_found ?
-                                 tokens[ authorization ]:
-                                 tokens[ "*" ];
+            const auto& token_options = authorization_section_found ?
+                                        tokens[ authorization ]:
+                                        tokens[ "*" ];
 
             const bool store_section_found = ( token_options[ store ].is_object() &&
                                                token_options[ store ].size() > 0 );
@@ -51,39 +49,59 @@ int16_t check_autorization_is_valid_and_enabled( const std::string& authorizatio
                   token_options[ "*" ].size() > 0
                 ) ) {
 
-              rules = store_section_found ?
-                      token_options[ store ][ "rules" ]:
-                      token_options[ "*" ][ "rules" ];
+              result.rules = store_section_found ?
+                             const_cast<Common::NJSONElement *>( &token_options[ store ][ "rules" ] ):
+                             const_cast<Common::NJSONElement *>( &token_options[ "*" ][ "rules" ] );
 
             }
 
             //std::cout << rules.to_string() << std::endl;
 
-            if ( rules.is_object() &&
-                 rules.size() > 0 &&
-                 rules[ "deny" ].is_array() &&
-                 rules[ "allow" ].is_array() ) {
+            if ( result.rules &&
+                 result.rules->is_object() &&
+                 result.rules->size() > 0 &&
+                 (*result.rules)[ "deny" ].is_array() &&
+                 (*result.rules)[ "allow" ].is_array() ) {
 
-              result = 1;
+              if ( (
+                     store_section_found &&
+                     token_options[ store ][ "max_active_transactions" ].is_integer()
+                   )
+                   ||
+                   token_options[ "*" ][ "max_active_transactions" ].is_integer() ) {
+
+                const auto max_active_transactions = store_section_found ?
+                                                     token_options[ store ][ "max_active_transactions" ].as_integer():
+                                                     token_options[ "*" ][ "max_active_transactions" ].as_integer();
+
+                if ( max_active_transactions > 0 ) {
+
+                  result.max_active_transactions = max_active_transactions;
+
+                }
+
+              }
+
+              result.value = 1;
 
             }
             else {
 
-              result = -102; //No rules defined to store
+              result.value = -102; //No rules defined to store
 
             }
 
           }
           else {
 
-            result = -101; //Token disabled
+            result.value = -101; //Token disabled
 
           }
 
         }
         else {
 
-          result = -100; //Token not found. Unhathorized
+          result.value = -100; //Token not found. Unhathorized
 
         }
 
@@ -100,9 +118,15 @@ int16_t check_autorization_is_valid_and_enabled( const std::string& authorizatio
 
   }
 
-  return result;
-
 }
+
+// CheckAuthorizationResult check_autorization( const std::string& authorization,
+//                                              const std::string& store ) {
+
+//   CheckAuthorizationResult result { -1, nullptr, 0 }; //Unable to process the authorization token
+
+
+// }
 
 struct MatchRuleResult {
 
@@ -120,14 +144,22 @@ inline MatchRuleResult match_rule( const std::string& authorization,
 
   try {
 
+    bool rule_enabled = true;
     std::string rule_kind {}; //Exact expression by default
     std::string rule_expression {};
     std::string action {};
 
-    std::string verb {}; //GET, POST, PUT, DELETE
+    std::string method {}; //GET, POST, PUT, DELETE
     std::string url {};
+    std::string body {};
 
     if ( rule.is_object() ) {
+
+      if ( rule[ "enabled" ].is_boolean() ) {
+
+        rule_enabled = rule[ "enabled" ].as_boolean();
+
+      }
 
       if ( rule[ "kind" ].is_string() ) {
 
@@ -141,15 +173,21 @@ inline MatchRuleResult match_rule( const std::string& authorization,
 
       }
 
-      if ( rule[ "verb" ].is_string() ) {
+      if ( rule[ "method" ].is_string() ) {
 
-        verb = rule[ "verb" ].as_string_ref();
+        method = rule[ "method" ].as_string_ref();
 
       }
 
       if ( rule[ "url" ].is_string() ) {
 
         url = rule[ "url" ].as_string_ref();
+
+      }
+
+      if ( rule[ "body" ].is_string() ) {
+
+        body = rule[ "body" ].as_string_ref();
 
       }
 
@@ -168,7 +206,7 @@ inline MatchRuleResult match_rule( const std::string& authorization,
 
     rule_expression = Common::trim( rule_expression );
 
-    if ( rule_expression != "" ) {
+    if ( rule_expression != "" && rule_enabled ) {
 
       if ( rule_expression != "*" ) {
 

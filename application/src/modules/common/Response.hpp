@@ -46,7 +46,7 @@ namespace Common {
   result = {
              StatusCode: 500, //Internal server error
              Code: "ERROR_UNEXPECTED",
-             Message: "Unexpected error. Please read the server log for more details.",
+             Message: "Unexpected error. Please read the server log for more details",
              LogId: error.LogId,
              Mark: strMark,
              IsError: true,

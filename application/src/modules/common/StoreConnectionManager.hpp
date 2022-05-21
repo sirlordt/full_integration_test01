@@ -17,6 +17,8 @@ using QueueStoreConnectionSharedPtr = std::queue<StoreConnectionSharedPtr>;
 using MapNameToQueueStoreConnectionSharedPtr = std::map<std::string,QueueStoreConnectionSharedPtr>;
 using MapTransactionIdToStoreSQLConnectionTransactionSharedPtr = std::map<std::string,StoreSQLConnectionTransactionPtr>;
 using MapIdToStoreConnectionSharedPtr = std::map<std::string,StoreConnectionSharedPtr>;
+using VectorTransactionId = std::vector<std::string>;
+using MapAuthorizationToVectorActiveTransactionId = std::map<std::string,VectorTransactionId>;
 using MapStoreConnectionAliasNameToRealName = std::map<std::string,std::string>;
 
 class StoreConnectionManager {
@@ -43,6 +45,14 @@ public:
                                           StoreSQLConnectionTransactionPtr &store_sql_connection_transaction );
   static bool unregister_transaction_by_id( const std::string& id );
 
+  static void active_transaction_list_by_authorization( const std::string& authorization,
+                                                        VectorTransactionId& result );
+  static std::size_t active_transaction_count_by_authorization( const std::string& authorization );
+  static bool register_transaction_id_to_authorization( const std::string& authorization,
+                                                        const std::string& transaction_id );
+  static bool unregister_transaction_id_by_authorization( const std::string& authorization,
+                                                          const std::string& transaction_id );
+
   static StoreConnectionSharedPtr store_connection_by_id( const std::string& id );
   static bool register_store_connection_to_id( const std::string& id,
                                                StoreConnectionSharedPtr &store_connection );
@@ -56,10 +66,11 @@ private:
 
   inline static MapNameToQueueStoreConnectionSharedPtr map_name_to_queue_store_connection_ {};
 
-
   inline static MapTransactionIdToStoreSQLConnectionTransactionSharedPtr map_id_to_store_sql_connection_transaction_ {};
 
   inline static MapIdToStoreConnectionSharedPtr map_id_to_store_connection_ {};
+
+  inline static MapAuthorizationToVectorActiveTransactionId map_authorization_to_vector_active_transaction_id_ {};
 
   inline static MapStoreConnectionAliasNameToRealName map_store_connection_alias_name_to_real_name_ {};
 

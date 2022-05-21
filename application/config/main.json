@@ -12,7 +12,7 @@
       "user": "root",
       "password": "dsistemas",
       "pool": 3,
-      "comment": "any comment here"
+      "comment": "main mysql database connection"
     },
     {
       "name": "no_sql_01",
@@ -23,7 +23,7 @@
       "user": "",
       "password": "",
       "pool": 3,
-      "comment": "any comment here"
+      "comment": "support mongodb database connection"
     },
     {
       "name": "no_sql_02",
@@ -34,7 +34,7 @@
       "user": "",
       "password": "12345678",
       "pool": 3,
-      "comment": "any comment here"
+      "comment": "cache redis database connection"
     }
   ],
   "stores_connections_alias": {
@@ -48,9 +48,11 @@
       "534b1c6b-f759-4195-872b-aa5d8c9871f7": {
         "enabled": true,
         "*": {
+          "max_active_transactions": 1,
           "rules": {
             "list": [
                       {
+                        "enabled": true,
                         "kind": "exact",
                         "expression": "*",
                         "action": "allow"
@@ -64,14 +66,24 @@
       "88fd5bea-af38-4c2b-9033-a7de4740b3cd": {
         "enabled": true,
         "sql_01": {
+          "max_active_transactions": 1,
           "rules": {
-            "list": [],
+            "list": [
+                      {
+                        "enabled": true,
+                        "kind": "reg_exp",
+                        "expression": "delete from bizCars",
+                        "action": "allow"
+                      }
+                    ],
             "deny": [
               {
+                "enabled": true,
                 "kind": "reg_exp",
                 "expression": ".*Delete.+From.*"
               },
               {
+                "enabled": true,
                 "kind": "exact",
                 "expression": "Delete From sysPerson"
               }
@@ -80,6 +92,7 @@
           }
         },
         "*": {
+          "max_active_transactions": 1,
           "rules": {
             "list": [],
             "deny": [],
@@ -89,6 +102,7 @@
       },
       "*": {
         "*": {
+          "max_active_transactions": 1,
           "rules": {
             "list": [],
             "deny": [ "*" ],
