@@ -47,16 +47,16 @@ namespace Common {
 using Store::StoreConnectionSharedPtr;
 using Store::StoreConnection;
 
-using NJSONElement = nanojson::element;
-using NJSONElementArray = nanojson::element::array_t;
-using NJSONElementObject = nanojson::element::object_t;
+using NANOJSONElement = nanojson::element;
+using NANOJSONElementArray = nanojson::element::array_t;
+using NANOJSONElementObject = nanojson::element::object_t;
 
 // A workaround to give to use fifo_map as map, we are just ignoring the 'less' compare
 // template<class K, class V, class dummy_compare, class A>
 // using custom_fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
 using NLOJSONObject = nlohmann::ordered_json; //nlohmann::basic_json<custom_fifo_map>; //
 
-extern NJSONElement config_json;
+extern NANOJSONElement config_json;
 
 const std::string get_file_path( const std::string& file );
 std::stringstream read_text_file_content( const std::string& path_file_to_read );
@@ -64,7 +64,7 @@ nanojson::element get_config( const std::string& config_path_file );
 
 std::string trim( const std::string &s );
 
-StoreConnectionSharedPtr make_store_connection( NJSONElement &config_json );
+StoreConnectionSharedPtr make_store_connection( NANOJSONElement &config_json );
 
 const std::string get_thread_id();
 const std::string xxHash_32( const std::string &to_hash );

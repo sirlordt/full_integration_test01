@@ -8,7 +8,7 @@ namespace Store {
 
 //Common::JSONElementObject &store_alias_config_list
 
-bool StoreConnectionManager::init_stores_connections( Common::NJSONElementArray &store_connections_config_list ) {
+bool StoreConnectionManager::init_stores_connections( Common::NANOJSONElementArray &store_connections_config_list ) {
 
   bool result { false };
 
@@ -123,7 +123,7 @@ bool StoreConnectionManager::init_stores_connections( Common::NJSONElementArray 
 
 }
 
-bool StoreConnectionManager::init_stores_connections_alias( Common::NJSONElementObject &stores_connections_alias_config_list ) {
+bool StoreConnectionManager::init_stores_connections_alias( Common::NANOJSONElementObject &stores_connections_alias_config_list ) {
 
   bool result { false };
 

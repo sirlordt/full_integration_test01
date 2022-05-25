@@ -53,7 +53,7 @@ int handler_store_transaction_begin( const HttpContextPtr& ctx ) {
 
           if ( store != "" ) {
 
-            Common::NJSONElement store_rule_list {};
+            Common::NANOJSONElement store_rule_list {};
 
             Security::CheckAuthorizationResult check_authorization_result { 1, &store_rule_list, 1 };
 

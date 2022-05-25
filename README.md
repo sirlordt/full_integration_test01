@@ -35,6 +35,9 @@ Look at external/package_manager/conan/CMakeLists.txt for advance CMake/Conan In
 ### A sql query 01
 ![image](images/system_store_query_sql_1.png)
 
+### A sql query 04 (Map result to json struct)
+![image](images/system_store_query_sql_4.png)
+
 ### A sql transaction begin
 ![image](images/system_store_transaction_begin.png)
 

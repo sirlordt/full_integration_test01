@@ -15,7 +15,7 @@
 
 namespace Common {
 
-NJSONElement config_json {};
+NANOJSONElement config_json {};
 
 const std::string get_file_path( const std::string& file )
 {
@@ -189,7 +189,7 @@ std::string trim( const std::string &s ) {
 
 // }
 
-std::ostream& operator<<( std::ostream &stream, NJSONElement &json_element ) {
+std::ostream& operator<<( std::ostream &stream, NANOJSONElement &json_element ) {
 
   stream << "Name: " << json_element[ "name" ].to_string() << std::endl;
   stream << "Driver: " << json_element[ "driver" ].to_string() << std::endl;
@@ -204,7 +204,7 @@ std::ostream& operator<<( std::ostream &stream, NJSONElement &json_element ) {
 
 }
 
-StoreConnectionSharedPtr make_store_connection( NJSONElement &store_connection_config ) {
+StoreConnectionSharedPtr make_store_connection( NANOJSONElement &store_connection_config ) {
 
   StoreConnectionSharedPtr result { nullptr };
 

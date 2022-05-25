@@ -31,8 +31,8 @@ public:
   StoreConnectionManager &operator=( StoreConnectionManager &store_connection_manager ) = delete;
   StoreConnectionManager &&operator=( StoreConnectionManager &&store_connection_manager ) = delete;
 
-  static bool init_stores_connections( Common::NJSONElementArray &stores_connections_config_list );
-  static bool init_stores_connections_alias( Common::NJSONElementObject &stores_connections_alias_config_list );
+  static bool init_stores_connections( Common::NANOJSONElementArray &stores_connections_config_list );
+  static bool init_stores_connections_alias( Common::NANOJSONElementObject &stores_connections_alias_config_list );
 
   static std::string store_connection_name_to_real_name( const std::string& name );
   static bool store_connection_name_exists( const std::string& name );

@@ -50,8 +50,8 @@ void check_autorization( const std::string& authorization,
                 ) ) {
 
               result.rules = store_section_found ?
-                             const_cast<Common::NJSONElement *>( &token_options[ store ][ "rules" ] ):
-                             const_cast<Common::NJSONElement *>( &token_options[ "*" ][ "rules" ] );
+                             const_cast<Common::NANOJSONElement *>( &token_options[ store ][ "rules" ] ):
+                             const_cast<Common::NANOJSONElement *>( &token_options[ "*" ][ "rules" ] );
 
             }
 
@@ -138,7 +138,7 @@ struct MatchRuleResult {
 inline MatchRuleResult match_rule( const std::string& authorization,
                                    const std::string& store,
                                    const std::string& command,
-                                   const Common::NJSONElement& rule ) {
+                                   const Common::NANOJSONElement& rule ) {
 
   MatchRuleResult result { 0, "" };
 
@@ -269,7 +269,7 @@ inline MatchRuleResult match_rule( const std::string& authorization,
 int16_t check_command_to_store_is_authorizated( const std::string& authorization,
                                                 const std::string& store,
                                                 const std::string& command,
-                                                const Common::NJSONElement& rule_list ) {
+                                                const Common::NANOJSONElement& rule_list ) {
 
   int16_t result = -1; //Unable to process the command in store authorized
 

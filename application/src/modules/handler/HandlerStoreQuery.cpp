@@ -27,6 +27,26 @@
 
 namespace Handlers {
 
+inline bool key_exists( const auto& json_data, const auto& key ) {
+
+  bool result = false;
+
+  try {
+
+    const auto& field = json_data.at( key );
+
+    result = true;
+
+  }
+  catch ( const std::exception &ex ) {
+
+
+  }
+
+  return result;
+
+}
+
 inline void execute_sql_query( const std::string& thread_id,
                                const std::string& authorization,
                                const std::string& execute_id,
@@ -36,8 +56,9 @@ inline void execute_sql_query( const std::string& thread_id,
                                const Store::StoreSQLConnectionTransactionPtr& store_sql_connection_in_transaction,
                                const Store::StoreConnectionSharedPtr& store_connection,
                                const Common::NLOJSONObject& command_list,
+                               const Common::NLOJSONObject& map_list,
                                std::size_t& execute_list_size,
-                               const Common::NJSONElement& store_rule_list,
+                               const Common::NANOJSONElement& store_rule_list,
                                Common::NLOJSONObject& result ) {
 
   if ( store_sql_connection_in_transaction != nullptr ) {
@@ -72,9 +93,32 @@ inline void execute_sql_query( const std::string& thread_id,
 
                 if ( is_select_command ) {
 
+                  bool transform_raw_row = false;
+
+                  Common::NLOJSONObject* map_command_response { nullptr };
+
+                  if ( command_index < map_list.size() ) {
+
+                    if ( map_list[ command_index ].is_object() &&
+                         map_list[ command_index ].size() > 0 ) {
+
+                      map_command_response = const_cast<Common::NLOJSONObject*>( &map_list[ command_index ] );
+                      transform_raw_row = true;
+
+                    }
+
+                  }
+
+                  std::vector<std::string> key_prefix_list;
+
+                  std::map<std::string,std::vector<std::string>> map_key_prefix_to_vector_field_name;
+
                   soci::rowset<soci::row> rs = ( store_connection->sql_connection()->prepare << command );
 
-                  auto data_list = nlohmann::ordered_json::array(); //hv::Json::array();
+                  //auto data_list = nlohmann::ordered_json::array(); //hv::Json::array();
+                  auto data_list = nlohmann::json::array(); //hv::Json::array();
+
+                  size_t row_index = 0;
 
                   for ( soci::rowset<soci::row>::const_iterator it = rs.begin(); it != rs.end(); ++it ) {
 
@@ -88,7 +132,27 @@ inline void execute_sql_query( const std::string& thread_id,
 
                       auto props = row.get_properties( i );
 
-                      doc << '\"' << props.get_name() << "\":";
+                      const auto& field_name = props.get_name();
+
+                      doc << '\"' << field_name << "\":";
+
+                      if ( transform_raw_row && row_index == 0 ) {
+
+                        const auto& partial_field_name = field_name.substr( 0, 2 );
+
+                        const auto& iterator = std::find( key_prefix_list.begin(),
+                                                          key_prefix_list.end(),
+                                                          partial_field_name );
+
+                        if ( iterator == key_prefix_list.end() ) {
+
+                          key_prefix_list.push_back( partial_field_name );
+
+                        }
+
+                        map_key_prefix_to_vector_field_name[ partial_field_name ].push_back( field_name );
+
+                      }
 
                       if ( row.get_indicator( i ) != soci::i_null ) {
 
@@ -160,10 +224,293 @@ inline void execute_sql_query( const std::string& thread_id,
 
                     doc << "}" << std::endl;
 
-                    //std::cout << doc.str() << std::endl;
+                    //auto raw_json_row = Common::NANOJSONElement::from_string( doc.str() );
+                    //auto raw_json_row = nlohmann::ordered_json::parse( doc.str() );
+                    //const nlohmann::ordered_json&
+                    auto raw_json_row = nlohmann::json::parse( doc.str() );
 
-                    data_list.push_back( nlohmann::ordered_json::parse( doc.str() ) ); //hv::Json::parse( doc.str() ) );
-                    result[ "Count" ] = result[ "Count" ].get<int>() + 1;
+                    row_index += 1;
+
+                    data_list.push_back( raw_json_row );
+
+                  }
+
+                  result[ "Count" ] = row_index;
+
+                  if ( transform_raw_row ) {
+
+                    std::map<std::string,std::shared_ptr<nlohmann::json>> map_key_to_row_json {};
+
+                    /*
+                      {
+                        "__ROOT__": {
+                                      "Key": [ "A_Id" ],
+                                      "Prefix": "A_"
+                                    },
+                        "B_": {
+                                "Key": [ "B_Id" ],
+                                "Root": [ "B_" ],
+                                "Parent": { "B_MasterId": "A_Id" }
+                              },
+                        "C_": {
+                                "Key": [ "C_Id" ],
+                                "Root": [ "B_", "C_" ],
+                                "Parent":  { "C_DetailsL1Id": "B_Id" }
+                              }
+                      }
+                    */
+
+                    // std::map<std::string,std::vector<std::string>> map_key_prefix_to_vector_field_root = {}; //{ "?_": { "Root": [ "?_", "?_" ] } },
+
+                    // map_key_prefix_to_vector_field_root[ "B_" ].push_back( "B_" ); //{ "B_": { "Root": [ "B_" ] } }
+
+                    // map_key_prefix_to_vector_field_root[ "C_" ].push_back( "B_" ); //{ "C_": { "Root": [ "B_" ] } }
+                    // map_key_prefix_to_vector_field_root[ "C_" ].push_back( "C_" ); //{ "C_": { "Root": [ "B_", "C_" ] } }
+
+                    // std::map<std::string,std::vector<std::string>> map_key_prefix_to_vector_field_key = {}; //{ "?_": { "Key": [ "?_??" ] } },
+
+                    // map_key_prefix_to_vector_field_key[ "B_" ].push_back( "B_Id" );
+
+                    // map_key_prefix_to_vector_field_key[ "C_" ].push_back( "C_Id" );
+
+                    // std::map<std::string,std::vector<std::pair<std::string,std::string>>> map_key_prefix_to_vector_field_parent = {}; //{ "?_": { "Parent": { "?_?????", "?_??" } } },
+
+                    // map_key_prefix_to_vector_field_parent[ "B_" ].push_back( { "B_MasterId", "A_Id" } ); //{ "B_": { "Parent": { "B_MasterId", "A_Id" } } },
+
+                    // map_key_prefix_to_vector_field_parent[ "C_" ].push_back( { "C_DetailsL1Id", "B_Id" } ); //{ "C_": { "Parent": { "C_DetailsL1Id": "B_Id" } } },
+
+                    //map_command_response
+
+                    //const auto &main_prefix_value { "A_" };
+                    const auto &main_prefix_value = (*map_command_response)[ "__ROOT__" ][ "__PREFIX__" ].get<std::string>(); // { "A_" }; //"__ROOT__": { "__PREFIX__": "A_" }
+
+                    for ( int row_index = 0; row_index < data_list.size(); row_index++ ) {
+
+                      auto &json_row = data_list[ row_index ];
+
+                      //const auto& main_key_value = json_row[ "A_Id" ].get<std::string>(); //"__Root__": { "__KEY__": [ "A_Id" ] }
+                      std::string main_key_value {};
+
+                      for ( const auto& key_field_name: (*map_command_response)[ "__ROOT__" ][ "__KEY__" ] ) {
+
+                        main_key_value += json_row[ key_field_name.get<std::string>() ].get<std::string>(); //"__Root__": { "__KEY__": [ "A_Id" ] }
+
+                      }
+
+                      std::shared_ptr<nlohmann::json> json_row_root_object { nullptr };
+
+                      if ( map_key_to_row_json.contains( main_key_value ) ) {
+
+                        json_row_root_object = map_key_to_row_json[ main_key_value ];
+
+                      }
+                      else {
+
+                        map_key_to_row_json[ main_key_value ] = std::make_shared<nlohmann::json>();
+
+                        json_row_root_object = map_key_to_row_json[ main_key_value ];
+
+                      }
+
+                      for ( auto &key_prefix: key_prefix_list ) {
+
+                        const auto& map_command_response_key_prefix = (*map_command_response)[ key_prefix ];
+
+                        std::shared_ptr<nlohmann::json> temp_json_object { json_row_root_object };
+                        //nlohmann::json temp_json_object {};
+
+                        if ( key_prefix != main_prefix_value ) {
+
+                          temp_json_object = std::make_shared<nlohmann::json>();
+
+                        }
+
+                        (*temp_json_object)[ "__PREFIX__" ] = key_prefix;
+
+                        for ( const auto& field_name: map_key_prefix_to_vector_field_name[ key_prefix ] ) {
+
+                          auto& field_value = json_row[ field_name ];
+
+                          (*temp_json_object)[ field_name ] = field_value;
+
+                          // if ( key_prefix == main_prefix_value ) {
+
+                          //   //(*json_row_root_object)[ key_prefix ][ field_name ] = field_value;
+                          //   (*json_row_root_object)[ field_name ] = field_value;
+                          //   //(*json_row_root_object)[ "__prefix__" ] = key_prefix;
+
+                          // }
+                          // else {
+
+                          //   temp_json_object[ field_name ] = field_value;
+                          //   //temp_json_object[ "__prefix__" ] = key_prefix;
+
+                          // }
+
+                        }
+
+                        //if ( map_key_prefix_to_vector_field_root.find( key_prefix ) != map_key_prefix_to_vector_field_root.end() ) {
+                        //if ( (*map_command_response)[ key_prefix ][ "Root" ].type() == nlohmann::detail::value_t::array ) {
+                        if ( map_command_response_key_prefix.type() == nlohmann::detail::value_t::object &&
+                             map_command_response_key_prefix[ "Root" ].type() == nlohmann::detail::value_t::array ) {
+
+                          nlohmann::json* temp_json_row_root_object = json_row_root_object.get();
+
+                          //for ( const auto& root_field_name: map_key_prefix_to_vector_field_root[ key_prefix ] ) {
+                          //for ( const auto& root_field_name: (*map_command_response)[ key_prefix ][ "Root" ] ) {
+                          for ( const auto& root_field_name: map_command_response_key_prefix[ "Root" ] ) {
+
+                            //auto parent_temp_json_row_root_object = temp_json_row_root_object;
+
+                            temp_json_row_root_object = &(*temp_json_row_root_object)[ root_field_name.get<std::string>() ];
+
+                            if ( temp_json_row_root_object->type() == nlohmann::detail::value_t::array ) {
+
+                              //if ( map_key_prefix_to_vector_field_parent.find( key_prefix ) != map_key_prefix_to_vector_field_parent.end() ) {
+                              //if ( (*map_command_response)[ key_prefix ][ "Parent" ].type() == nlohmann::detail::value_t::object ) {
+                              if ( map_command_response_key_prefix[ "Parent" ].type() == nlohmann::detail::value_t::object ) {
+
+                                //bool object_found_in_array = false;
+
+                                bool match_same_prefix_key = false;
+
+                                for ( auto& object_in_array: *temp_json_row_root_object ) {
+
+                                  bool local_found = true;
+
+                                  match_same_prefix_key = object_in_array[ "__PREFIX__" ] == (*temp_json_object)[ "__PREFIX__" ];
+
+                                  if ( match_same_prefix_key == false ) {
+
+                                    //for ( const auto& field_parent_match: map_key_prefix_to_vector_field_parent[ key_prefix ] ) {
+                                    // for ( auto it = (*map_command_response)[ key_prefix ][ "Parent" ].begin();
+                                    //       it != (*map_command_response)[ key_prefix ][ "Parent" ].end();
+                                    //       ++it ) {
+                                    for ( auto it = map_command_response_key_prefix[ "Parent" ].begin();
+                                          it != map_command_response_key_prefix[ "Parent" ].end();
+                                          ++it ) {
+
+                                      //if ( object_in_array[ field_parent_match.second ] != (*temp_json_object)[ field_parent_match.first ] ) {
+                                      if ( object_in_array[ it.value().get<std::string>() ] != (*temp_json_object)[ it.key() ] ) {
+
+                                        local_found = false;
+                                        break;
+
+                                      }
+
+                                    }
+
+                                  }
+                                  else {
+
+                                    //for ( const auto& field_key: map_key_prefix_to_vector_field_key[ key_prefix ] ) {
+                                    //for ( const auto& field_key: (*map_command_response)[ key_prefix ][ "Key" ] ) {
+                                    for ( const auto& field_key: map_command_response_key_prefix[ "Key" ] ) {
+
+                                      if ( object_in_array[ field_key.get<std::string>() ] != (*temp_json_object)[ field_key.get<std::string>() ] ) {
+
+                                        local_found = false;
+                                        break;
+
+                                      }
+
+                                    }
+
+                                  }
+
+                                  if ( local_found ) {
+
+                                    if ( match_same_prefix_key == false ) {
+
+                                      temp_json_row_root_object = &object_in_array;
+
+                                    }
+                                    else {
+
+                                      temp_json_row_root_object = nullptr; //not add already exists
+
+                                    }
+
+                                    //object_found_in_array = true;
+                                    break;
+
+                                  }
+
+                                }
+
+                                // if ( object_found_in_array == false ) {
+
+                                //   temp_json_row_root_object = nullptr;
+
+                                // }
+
+                              }
+
+                              if ( temp_json_row_root_object == nullptr ) {
+
+                                break;
+
+                              }
+
+                            }
+
+                          }
+
+                          if ( temp_json_row_root_object  != nullptr ) {
+
+                            temp_json_row_root_object->push_back( *temp_json_object );
+
+                            // std::cout << "+++++" << std::endl;
+                            // std::cout << json_row_root_object->dump( 2 ) << std::endl; //map_key_to_row_json[ main_key.first ]->dump( 2 ) << std::endl;
+                            // std::cout << "+++++" << std::endl;
+
+                          }
+
+                        }
+                        /*
+                        if ( key_prefix == "B_" ) {
+
+                          //(*json_row_root_object)[ "A_" ][ key_prefix ].push_back( temp_json_object );
+                          (*json_row_root_object)[ key_prefix ].push_back( temp_json_object );
+
+                        }
+                        else if ( key_prefix == "C_" ) {
+
+                          //(*json_row_root_object)[ "A_" ][ "B_" ][ 0 ][ key_prefix ].push_back( temp_json_object );
+                          (*json_row_root_object)[ "B_" ][ 0 ][ key_prefix ].push_back( temp_json_object );
+
+                        }
+                        */
+
+                      }
+
+                      //main_key_list.push( main_key_value );
+
+                    }
+
+                    data_list.clear();
+
+                    size_t count = 0;
+
+                    result[ "Count" ] = count;
+
+                    //std::cout << "*****" << std::endl;
+
+                    for ( const auto &main_key: map_key_to_row_json  ) {
+
+                      //std::cout << main_key.second->dump( 2 ) << std::endl; //map_key_to_row_json[ main_key.first ]->dump( 2 ) << std::endl;
+
+                      data_list.emplace_back( std::move( *main_key.second ) );
+
+                      count += 1;
+
+                      //result[ "Count" ] = result[ "Count" ].get<int>() + 1;
+
+                    }
+
+                    result[ "Count" ] = count;
+
+                    //std::cout << "*****" << std::endl;
 
                   }
 
@@ -359,7 +706,7 @@ inline void execute_mongodb_query( const std::string& thread_id,
                                    const Store::StoreConnectionSharedPtr& store_connection,
                                    const Common::NLOJSONObject& command_list,
                                    std::size_t& execute_list_size,
-                                   const Common::NJSONElement& store_rule_list,
+                                   const Common::NANOJSONElement& store_rule_list,
                                    Common::NLOJSONObject& result ) {
 
   try {
@@ -630,7 +977,7 @@ inline void execute_redis_query( const std::string& thread_id,
                                  const Store::StoreConnectionSharedPtr& store_connection,
                                  const Common::NLOJSONObject& command_list,
                                  std::size_t& execute_list_size,
-                                 const Common::NJSONElement& store_rule_list,
+                                 const Common::NANOJSONElement& store_rule_list,
                                  Common::NLOJSONObject& result ) {
 
   try {
@@ -900,8 +1247,9 @@ inline void execute_command_list( const std::string& thread_id,
                                   const std::string& store,
                                   const std::string& transaction_id,
                                   const Common::NLOJSONObject& command_list,
+                                  const Common::NLOJSONObject& map_list,
                                   std::size_t& execute_list_size,
-                                  const Common::NJSONElement& store_rule_list,
+                                  const Common::NANOJSONElement& store_rule_list,
                                   Common::NLOJSONObject& result ) {
 
   if ( command_list.size() > 0 ) {
@@ -952,6 +1300,7 @@ inline void execute_command_list( const std::string& thread_id,
                            store_sql_connection_in_transaction,
                            store_connection,
                            command_list,
+                           map_list,
                            execute_list_size,
                            store_rule_list,
                            result );
@@ -1075,6 +1424,7 @@ inline void execute_block_command_list( const std::string& thread_id,
                                           "";
 
       Common::NLOJSONObject command_list {};
+      Common::NLOJSONObject map_list {};
 
       if ( execute_block[ "Command" ].is_array() ) {
 
@@ -1082,9 +1432,23 @@ inline void execute_block_command_list( const std::string& thread_id,
 
       }
 
+      try {
+
+        if ( execute_block.at( "Map" ).is_array() ) {
+
+          map_list = execute_block[ "Map" ];
+
+        }
+
+      }
+      catch ( const std::exception &ex ) {
+
+
+      }
+
       if ( store != "" ) {
 
-        Common::NJSONElement store_rule_list {};
+        Common::NANOJSONElement store_rule_list {};
 
         Security::CheckAuthorizationResult check_authorization_result { 1, nullptr, 1 };
 
@@ -1100,6 +1464,7 @@ inline void execute_block_command_list( const std::string& thread_id,
                                 store,
                                 transaction_id,
                                 command_list,
+                                map_list,
                                 execute_list_size,
                                 check_authorization_result.rules ? *check_authorization_result.rules: store_rule_list,
                                 //store_rule_list,
