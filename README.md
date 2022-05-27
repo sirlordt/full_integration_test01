@@ -30,13 +30,18 @@ Look at external/package_manager/conan/CMakeLists.txt for advance CMake/Conan In
   $ pip conan
 ```
 
+## Folders
+
+* Test database => full_integration_test_01/test/database/MySQL_v8_TestDB.sql
+* Postman => full_integration_test_01/postman/*.json
+
 ## Screenshots
 
 ### A sql query 01
-![image](images/system_store_query_sql_1.png)
+![image](images/system_store_query_sql_01.png)
 
-### A sql query 04 (Map result to json struct)
-![image](images/system_store_query_sql_4.png)
+### A sql query 05 (Map result to json document)
+![image](images/system_store_query_sql_05.png)
 
 ### A sql transaction begin
 ![image](images/system_store_transaction_begin.png)

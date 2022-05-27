@@ -241,7 +241,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData, C.Id As C_Id, C.DetailsL1Id As C_DetailsL1Id, C.Name As C_Name, C.ExtraData As C_ExtraData From sysMaster As A Inner Join sysDetailsL1 As B On B.MasterId = A.Id Inner Join sysDetailsL2 As C On C.DetailsL1Id = B.Id\"\n                     ],\n          \"Map\": [\n                   {\n                     \"__ROOT__\": { \n                                   \"__KEY__\": [ \"A_Id\" ],\n                                   \"__PREFIX__\": \"A_\"\n                                 },\n                     \"B_\": { \n                             \"Key\": [ \"B_Id\" ],\n                             \"Root\": [ \"sysDetailsL1\" ],\n                             \"Parent\": { \"B_MasterId\": \"A_Id\" }\n                           },\n                     \"C_\": { \n                             \"Key\": [ \"C_Id\" ],\n                             \"Root\": [ \"sysDetailsL1\", \"sysDetailsL2\" ],\n                             \"Parent\":  { \"C_DetailsL1Id\": \"B_Id\" }\n                           }\n                   }\n                 ]\n        }\n}",
+					"raw": "{\n  \"Authorization_disabled\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Autorization\": \"88fd5bea-af38-4c2b-9033-a7de4740b3cd\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select * From sysPerson ;  delete from sysPerson  \",\n                       \"Select * From sysPerson\"\n                     ]\n        }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -269,7 +269,119 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"Authorization_disabled\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Autorization\": \"88fd5bea-af38-4c2b-9033-a7de4740b3cd\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select * From sysPerson ;  delete from sysPerson  \",\n                       \"Select * From sysPerson\"\n                     ]\n        }\n}",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData, C.Id As C_Id, C.DetailsL01_01Id As C_DetailsL01_01Id, C.Name As C_Name, C.ExtraData As C_ExtraData From sysMaster As A Inner Join sysDetailsL01_01 As B On B.MasterId = A.Id Inner Join sysDetailsL02_01 As C On C.DetailsL01_01Id = B.Id\"\n                     ],\n          \"Map\": [\n                   {\n                     \"__ROOT__\": { \n                                   \"__KEY__\": [ \"A_Id\" ],\n                                   \"__PREFIX__\": \"A_\"\n                                 },\n                     \"B_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_01\"\n                           },\n                     \"C_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL02_01\"\n                           },\n                     \"D_\": { \n                             \"__KEY__\": [ \"A_Id\", \"D_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_02\"\n                           }\n                   }\n                 ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 6)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData, C.Id As C_Id, C.DetailsL01_01Id As C_DetailsL01_01Id, C.Name As C_Name, C.ExtraData As C_ExtraData From sysMaster As A Inner Join sysDetailsL01_01 As B On B.MasterId = A.Id Inner Join sysDetailsL02_01 As C On C.DetailsL01_01Id = B.Id Where A.Id = '3e640298-2ab0-45ab-ae71-31b119ec5fb7'\"\n                     ],\n          \"Map\": [\n                   {\n                     \"__ROOT__\": { \n                                   \"__KEY__\": [ \"A_Id\" ],\n                                   \"__PREFIX__\": \"A_\"\n                                 },\n                     \"B_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_01\"\n                           },\n                     \"C_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL02_01\"\n                           },\n                     \"D_\": { \n                             \"__KEY__\": [ \"A_Id\", \"D_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_02\"\n                           }\n                   }\n                 ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 7)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData, C.Id As C_Id, C.DetailsL01_01Id As C_DetailsL01_01Id, C.Name As C_Name, C.ExtraData As C_ExtraData, D.Id As D_Id, D.MasterId As D_MasterId, D.Name As D_Name, D.ExtraData As D_ExtraData From sysMaster As A Inner Join sysDetailsL01_01 As B On B.MasterId = A.Id Inner Join sysDetailsL02_01 As C On C.DetailsL01_01Id = B.Id Inner Join sysDetailsL01_02 As D On D.MasterId = A.Id Where A.Id = '3e640298-2ab0-45ab-ae71-31b119ec5fb7'\"\n                     ],\n          \"Map\": [\n                   {\n                     \"__ROOT__\": { \n                                   \"__KEY__\": [ \"A_Id\" ],\n                                   \"__PREFIX__\": \"A_\"\n                                 },\n                     \"B_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_01\"\n                           },\n                     \"C_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL02_01\"\n                           },\n                     \"D_\": { \n                             \"__KEY__\": [ \"A_Id\", \"D_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_02\"\n                           }\n                   }\n                 ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 8)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData, C.Id As C_Id, C.DetailsL01_01Id As C_DetailsL01_01Id, C.Name As C_Name, C.ExtraData As C_ExtraData, D.Id As D_Id, D.MasterId As D_MasterId, D.Name As D_Name, D.ExtraData As D_ExtraData From sysMaster As A Inner Join sysDetailsL01_01 As B On B.MasterId = A.Id Inner Join sysDetailsL02_01 As C On C.DetailsL01_01Id = B.Id Inner Join sysDetailsL01_02 As D On D.MasterId = A.Id\"\n                     ],\n          \"Map\": [\n                   {\n                     \"__ROOT__\": { \n                                   \"__KEY__\": [ \"A_Id\" ],\n                                   \"__PREFIX__\": \"A_\"\n                                 },\n                     \"B_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_01\"\n                           },\n                     \"C_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL02_01\"\n                           },\n                     \"D_\": { \n                             \"__KEY__\": [ \"A_Id\", \"D_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_02\"\n                           }\n                   }\n                 ]\n        }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Host}}{{BasePath}}/system/store/query",
+					"host": [
+						"{{Host}}{{BasePath}}"
+					],
+					"path": [
+						"system",
+						"store",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "system/store/query (sql 9)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Authorization\": \"534b1c6b-f759-4195-872b-aa5d8c9871f7\",\n  \"Execute\": [ \"01\" ],\n  \"01\": {\n          \"Store\": \"sql_01\",\n          \"TransactionId\": \"\",\n          \"Command\": [\n                       \"Select A.Id As A_Id, A.Name As A_Name, A.ExtraData As A_ExtraData, B.Id As B_Id, B.MasterId As B_MasterId, B.Name As B_Name, B.ExtraData As B_ExtraData, C.Id As C_Id, C.DetailsL01_01Id As C_DetailsL01_01Id, C.Name As C_Name, C.ExtraData As C_ExtraData, D.Id As D_Id, D.MasterId As D_MasterId, D.Name As D_Name, D.ExtraData As D_ExtraData, E.Id As E_Id, E.DetailsL02_01Id As E_DetailsL02_01Id, E.Name As E_Name, E.ExtraData As E_ExtraData From sysMaster As A Inner Join sysDetailsL01_01 As B On B.MasterId = A.Id Inner Join sysDetailsL02_01 As C On C.DetailsL01_01Id = B.Id Inner Join sysDetailsL01_02 As D On D.MasterId = A.Id Left Outer Join sysDetailsL03_01 As E On E.DetailsL02_01Id = C.Id\"\n                     ],\n          \"Map\": [\n                   {\n                     \"__ROOT__\": { \n                                   \"__KEY__\": [ \"A_Id\" ],\n                                   \"__PREFIX__\": \"A_\"\n                                 },\n                     \"B_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_01\"\n                           },\n                     \"C_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\", \"B_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL02_01\"\n                           },\n                     \"D_\": { \n                             \"__KEY__\": [ \"A_Id\", \"D_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL01_02\"\n                           },\n                     \"E_\": { \n                             \"__KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\", \"E_Id\" ],\n                             \"__PARENT_KEY__\": [ \"A_Id\", \"B_Id\", \"C_Id\" ],\n                             \"__PARENT_FIELD__\": \"sysDetailsL03_01\"\n                           }\n                   }\n                 ]\n        }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
