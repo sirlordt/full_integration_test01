@@ -262,11 +262,111 @@ int main( int argc, char** argv ) {
 
   router.POST( end_point.str().c_str(), Handlers::handler_store_query );
 
+
+  router.GET( "/fetch/token/info", [&router]( const HttpContextPtr& ctx ) {
+
+    u_int16_t status_code { 400 }; //Bad request by default
+
+    try {
+
+      if ( ctx->request->query_params.size() > 0 ) {
+
+        if ( ctx->request->query_params.at( "Authorization" ) == "xxx1" ) {
+
+          ctx->response->content_type = APPLICATION_JSON;
+
+          const std::string json_template = R"(
+                                                {
+                                                  "enabled": true,
+                                                  "ttl_minutes": 1,
+                                                  "last_check": "_",
+                                                  "sql_01": {
+                                                              "max_active_transactions": 1,
+                                                              "rules": {
+                                                                         "list": [
+                                                                                   {
+                                                                                     "enabled": true,
+                                                                                     "kind": "exact",
+                                                                                     "expression": "*",
+                                                                                     "action": "allow"
+                                                                                   }
+                                                                                 ],
+                                                                         "deny": [],
+                                                                         "allow": [ "*" ]
+                                                                       }
+                                                            }
+                                                }
+                                              )";
+
+          Common::NLOJSONObject result;
+
+          result = nlohmann::ordered_json::parse( json_template );
+
+          ctx->response->body = result.dump( 2 );
+
+          status_code = 200;
+
+        }
+
+      }
+
+    }
+    catch ( const std::exception &ex ) {
+
+      hloge( "Exception: %s", ex.what() );
+
+      std::cout << "Exception: " << ex.what() << std::endl;
+
+    }
+
+    return status_code;
+
+  });
+
+  router.POST( "/fetch/command/authorized", [&router]( const HttpContextPtr& ctx ) {
+
+    u_int16_t status_code { 403 }; //Forbidden by default
+
+    try {
+
+      auto json_body = hv::Json::parse( ctx->body() );
+
+      if ( json_body.is_object() ) {
+
+        // std::cout << "Authorization: " << json_body[ "Authorization" ] << std::endl;
+        // std::cout << "Store: " << json_body[ "Store" ] << std::endl;
+        // std::cout << "Command: " << json_body[ "Command" ] << std::endl;
+
+        if ( json_body[ "Authorization" ] == "xxx1" &&
+             json_body[ "Store" ] == "sql_01" &&
+             json_body[ "Command" ] == "Select * From sysPerson Where Id = '1f0a95cc-e9e8-43ad-9325-c367a2b17e29'" ) {
+
+          status_code = 200; //Ok authorize the command
+
+        }
+
+      }
+
+    }
+    catch ( const std::exception &ex ) {
+
+      hloge( "Exception: %s", ex.what() );
+
+      std::cout << "Exception: " << ex.what() << std::endl;
+
+    }
+
+    return status_code;
+
+  });
+
+
   router.GET( "/ping", []( HttpRequest* req, HttpResponse* resp ) {
 
     return resp->String( "pong" );
 
   });
+
 
   router.GET( "/data", []( HttpRequest* req, HttpResponse* resp ) {
 

@@ -44,6 +44,23 @@
   },
   "security": {
     "default": "deny",
+    "fetch_tokens": {
+                      "enabled": true,
+                      "on_fail_to_refresh": "use_last_response",
+                      "request": {
+                                   "method": "GET",
+                                   "url": "http://127.0.0.1:8080/fetch/token/info",
+                                   "headers": {
+                                                "Content-Type": "application/json"
+                                              },
+                                   "params": {
+                                               "Authorization": "%1%"
+                                             },
+                                   "body": {
+                                           },
+                                   "timeout": 10000
+                                 }
+                    },
     "tokens": {
       "534b1c6b-f759-4195-872b-aa5d8c9871f7": {
         "enabled": true,
@@ -104,7 +121,29 @@
         "*": {
           "max_active_transactions": 1,
           "rules": {
-            "list": [],
+            "list": [
+                      {
+                        "enabled": true,
+                        "kind": "fetch_command_authorized",
+                        "expression": "_",
+                        "request": {
+                                     "method": "POST",
+                                     "url": "http://127.0.0.1:8080/fetch/command/authorized",
+                                     "headers": {
+                                                  "Content-Type": "application/json"
+                                                },
+                                     "params": {
+                                               },
+                                     "body": {
+                                               "Authorization": "%1%",
+                                               "Store": "%2%",
+                                               "Command": "%3%"
+                                             },
+                                     "timeout": 10000
+                                   },
+                        "action": "allow"
+                      }
+                    ],
             "deny": [ "*" ],
             "allow": []
           }
